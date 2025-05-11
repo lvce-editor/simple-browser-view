@@ -21,7 +21,7 @@ const getUrlFromSavedState = (savedState: any): string => {
   return SimpleBrowserPreferences.getDefaultUrl()
 }
 
-export const loadContent = async (state: SimpleBrowserState, savedState: any) => {
+export const loadContent = async (state: SimpleBrowserState, savedState: any): Promise<SimpleBrowserState> => {
   const { x, y, width, height, headerHeight, uri, uid } = state
   const idPart = uri.slice('simple-browser://'.length)
   const id = getId(idPart)
@@ -46,6 +46,7 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any) =>
     return {
       ...state,
       iframeSrc,
+      // @ts-ignore
       title: 'Simple Browser',
       browserViewId: actualId,
       suggestionsEnabled,
@@ -64,6 +65,7 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any) =>
   return {
     ...state,
     iframeSrc,
+    // @ts-ignore
     title,
     browserViewId,
     canGoBack,
