@@ -1,4 +1,5 @@
 import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserState.ts'
+// @ts-ignore
 import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.js'
 import * as IframeSrc from '../IframeSrc/IframeSrc.ts'
 
