@@ -1,5 +1,5 @@
 import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserState.ts'
-import * as ElectronBrowserViewFunctions from '../ElectronBrowserViewFunctions/ElectronBrowserViewFunctions.js'
+import * as ElectronBrowserViewFunctions from '../ElectronBrowserViewFunctions/ElectronBrowserViewFunctions.ts'
 
 export const cancelNavigation = async (state: SimpleBrowserState): Promise<SimpleBrowserState> => {
   const { browserViewId } = state
