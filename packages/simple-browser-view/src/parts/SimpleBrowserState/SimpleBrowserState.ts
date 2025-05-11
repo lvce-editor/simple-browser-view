@@ -12,4 +12,6 @@ export interface SimpleBrowserState {
   readonly canGoBack: boolean
   readonly canGoForward: boolean
   readonly iframeSrc: string
+  readonly headerHeight: number
+  readonly uri: string
 }
