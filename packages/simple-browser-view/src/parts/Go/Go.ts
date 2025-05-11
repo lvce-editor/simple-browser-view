@@ -1,9 +1,8 @@
 import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserState.ts'
-// @ts-ignore
 import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.js'
 import * as IframeSrc from '../IframeSrc/IframeSrc.ts'
 
-export const go = (state: SimpleBrowserState) => {
+export const go = async (state: SimpleBrowserState): Promise<SimpleBrowserState> => {
   const { inputValue, browserViewId, suggestionsEnabled, hasSuggestionsOverlay, shortcuts } = state
   const iframeSrc = IframeSrc.toIframeSrc(inputValue, shortcuts)
   // TODO await promises
