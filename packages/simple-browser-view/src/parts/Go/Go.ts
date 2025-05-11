@@ -1,5 +1,5 @@
 import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserState.ts'
-import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.js'
+import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.ts'
 import * as IframeSrc from '../IframeSrc/IframeSrc.ts'
 
 export const go = async (state: SimpleBrowserState): Promise<SimpleBrowserState> => {
