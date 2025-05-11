@@ -11,6 +11,11 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     focus: 0,
     focused: false,
     height,
+    browserViewId: 0,
+    canGoBack: false,
+    canGoForward: false,
+    iframeSrc: '',
+    isLoading: false,
   }
   SearchViewStates.set(uid, state, state)
   return state

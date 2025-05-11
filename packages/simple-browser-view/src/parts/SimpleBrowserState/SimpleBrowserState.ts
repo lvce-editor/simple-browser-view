@@ -7,4 +7,9 @@ export interface SimpleBrowserState {
   readonly height: number
   readonly uid: number
   readonly value: string
+  readonly browserViewId: number
+  readonly isLoading: boolean
+  readonly canGoBack: boolean
+  readonly canGoForward: boolean
+  readonly iframeSrc: string
 }
