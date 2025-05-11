@@ -1,0 +1,19 @@
+import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserState.ts'
+import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.js'
+import * as IframeSrc from '../IframeSrc/IframeSrc.ts'
+
+export const go = (state: SimpleBrowserState) => {
+  const { inputValue, browserViewId, suggestionsEnabled, hasSuggestionsOverlay, shortcuts } = state
+  const iframeSrc = IframeSrc.toIframeSrc(inputValue, shortcuts)
+  // TODO await promises
+  void ElectronWebContentsViewFunctions.setIframeSrc(browserViewId, iframeSrc)
+  void ElectronWebContentsViewFunctions.focus(browserViewId)
+  if (suggestionsEnabled && hasSuggestionsOverlay) {
+    // void ElectronBrowserViewSuggestions.disposeBrowserView()
+  }
+  return {
+    ...state,
+    iframeSrc,
+    isLoading: true,
+  }
+}

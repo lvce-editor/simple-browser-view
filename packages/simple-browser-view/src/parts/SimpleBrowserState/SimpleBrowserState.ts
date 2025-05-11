@@ -6,10 +6,13 @@ export interface SimpleBrowserState {
   readonly width: number
   readonly height: number
   readonly uid: number
-  readonly value: string
+  readonly inputValue: string
   readonly browserViewId: number
   readonly isLoading: boolean
   readonly canGoBack: boolean
   readonly canGoForward: boolean
   readonly iframeSrc: string
+  readonly suggestionsEnabled: boolean
+  readonly hasSuggestionsOverlay: boolean
+  readonly shortcuts: readonly any[]
 }
