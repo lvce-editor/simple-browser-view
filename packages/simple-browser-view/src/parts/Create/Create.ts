@@ -16,6 +16,8 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     canGoForward: false,
     iframeSrc: '',
     isLoading: false,
+    headerHeight: 35,
+    uri: '',
   }
   SearchViewStates.set(uid, state, state)
   return state
