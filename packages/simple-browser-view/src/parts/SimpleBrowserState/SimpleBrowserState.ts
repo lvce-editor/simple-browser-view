@@ -15,4 +15,6 @@ export interface SimpleBrowserState {
   readonly suggestionsEnabled: boolean
   readonly hasSuggestionsOverlay: boolean
   readonly shortcuts: readonly any[]
+  readonly headerHeight: number
+  readonly uri: string
 }

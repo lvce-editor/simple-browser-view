@@ -19,6 +19,8 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     hasSuggestionsOverlay: false,
     shortcuts: [],
     suggestionsEnabled: false,
+    headerHeight: 35,
+    uri: '',
   }
   SearchViewStates.set(uid, state, state)
   return state
