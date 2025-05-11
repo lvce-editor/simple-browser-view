@@ -28,12 +28,12 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
   const iframeSrc = getUrlFromSavedState(savedState)
   // TODO load keybindings in parallel with creating browserview
   const keyBindings = await KeyBindingsInitial.getKeyBindings()
-  const suggestionsEnabled = Preferences.get('simpleBrowser.suggestions')
+  const suggestionsEnabled = await Preferences.get('simpleBrowser.suggestions')
   const browserViewX = x
   const browserViewY = y + headerHeight
   const browserViewWidth = width
   const browserViewHeight = height - headerHeight
-  const shortcuts = SimpleBrowserPreferences.getShortCuts()
+  const shortcuts = await SimpleBrowserPreferences.getShortCuts()
 
   if (id) {
     // @ts-ignore
