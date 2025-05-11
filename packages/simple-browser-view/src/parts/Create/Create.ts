@@ -4,7 +4,7 @@ import * as SearchViewStates from '../SimpleBrowserStates/SimpleBrowserStates.ts
 export const create = (uid: number, x: number, y: number, width: number, height: number, value: string = ''): SimpleBrowserState => {
   const state: SimpleBrowserState = {
     uid,
-    value,
+    inputValue: value,
     x,
     y,
     width,
@@ -16,6 +16,9 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     canGoForward: false,
     iframeSrc: '',
     isLoading: false,
+    hasSuggestionsOverlay: false,
+    shortcuts: [],
+    suggestionsEnabled: false,
     headerHeight: 35,
     uri: '',
   }
