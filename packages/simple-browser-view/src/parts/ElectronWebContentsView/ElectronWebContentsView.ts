@@ -4,7 +4,7 @@ const state = {
   refs: 0,
 }
 
-export const createWebContentsView = async (restoreId: number, fallThroughKeyBindings: readonly any[]): Promise<void> => {
+export const createWebContentsView = async (restoreId: number, fallThroughKeyBindings: readonly any[]): Promise<any> => {
   state.refs++
   return EmbedsWorker.invoke('ElectronWebContentsView.createWebContentsView', restoreId, fallThroughKeyBindings)
 }
