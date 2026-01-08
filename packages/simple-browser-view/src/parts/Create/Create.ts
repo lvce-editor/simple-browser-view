@@ -20,6 +20,7 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     shortcuts: [],
     suggestionsEnabled: false,
     headerHeight: 35,
+    title: '',
     uri: '',
   }
   SearchViewStates.set(uid, state, state)
