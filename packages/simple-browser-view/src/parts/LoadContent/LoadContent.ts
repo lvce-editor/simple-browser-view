@@ -65,7 +65,6 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
   return {
     ...state,
     iframeSrc,
-    // @ts-ignore
     title,
     browserViewId,
     canGoBack,

@@ -17,4 +17,5 @@ export interface SimpleBrowserState {
   readonly shortcuts: readonly any[]
   readonly headerHeight: number
   readonly uri: string
+  readonly title: string
 }
