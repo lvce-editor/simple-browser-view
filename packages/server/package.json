@@ -12,6 +12,7 @@
   "license": "MIT",
   "description": "",
   "dependencies": {
+    "@lvce-editor/main-process": "^3.1.0",
     "@lvce-editor/server": "^0.52.1"
   }
 }
