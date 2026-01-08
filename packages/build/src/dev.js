@@ -1,5 +1,6 @@
 import { execa } from 'execa'
 import { root } from './root.js'
+import { join } from 'node:path'
 
 const main = async () => {
   execa(`npm`, ['run', 'build:watch'], {
@@ -7,10 +8,11 @@ const main = async () => {
     stdio: 'inherit',
   })
   execa(
-    'node',
-    ['packages/server/node_modules/@lvce-editor/server/bin/server.js', '--only-extension=packages/e2e/extension', '--test-path=packages/e2e'],
+    'npx',
+
+    ['electron', '.'],
     {
-      cwd: root,
+      cwd: join(root, 'packages', 'server'),
       stdio: 'inherit',
     },
   )
