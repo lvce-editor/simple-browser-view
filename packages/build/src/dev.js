@@ -14,6 +14,10 @@ const main = async () => {
     {
       cwd: join(root, 'packages', 'server'),
       stdio: 'inherit',
+      env: {
+        ...process.env,
+        LVCE_SHARED_PROCESS_PATH: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'shared-process', 'src', 'sharedProcessMain.js'),
+      },
     },
   )
 }
