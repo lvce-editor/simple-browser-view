@@ -12,10 +12,10 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
-  "devDependencies": {
-    "@lvce-editor/test-with-playwright": "^2.17.0"
-  },
+  "devDependencies": {},
   "dependencies": {
-    "@playwright/test": "^1.57.0"
+    "@playwright/test": "^1.57.0",
+    "@lvce-editor/test-with-playwright": "^2.17.0",
+    "@types/node": "^25.0.3"
   }
 }
