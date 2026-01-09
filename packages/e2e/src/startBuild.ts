@@ -1,8 +1,8 @@
 import { spawn, ChildProcess, execSync } from 'node:child_process'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
+import { root } from './root.ts'
 
-const root = join(import.meta.dirname, '../../..')
 const buildOutputPath = join(root, '.tmp', 'dist', 'dist', 'simpleBrowserViewWorkerMain.js')
 
 export const startBuild = (): ChildProcess => {

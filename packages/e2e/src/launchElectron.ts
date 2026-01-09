@@ -1,8 +1,8 @@
 import { _electron as electron, ElectronApplication } from 'playwright'
 import { join } from 'node:path'
 import { existsSync } from 'node:fs'
+import { root } from './root.ts'
 
-const root = join(import.meta.dirname, '../../..')
 const serverPath = join(root, 'packages/server')
 
 const getElectronExecutablePath = (): string => {
