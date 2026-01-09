@@ -1,13 +1,18 @@
 import { test, expect } from '@playwright/test'
 import { ElectronApplication } from 'playwright'
+import { mkdtempSync, rmSync } from 'node:fs'
+import { join } from 'node:path'
+import { tmpdir } from 'node:os'
 import * as LaunchElectron from '../src/launchElectron.ts'
 
 test.describe('Simple Browser E2E', () => {
   let electronApp: ElectronApplication | null = null
   let page: Awaited<ReturnType<ElectronApplication['firstWindow']>> | null = null
+  let userDataDir: string | null = null
 
   test.beforeAll(async () => {
-    electronApp = await LaunchElectron.launchElectron()
+    userDataDir = mkdtempSync(join(tmpdir(), 'simple-browser-view-e2e-'))
+    electronApp = await LaunchElectron.launchElectron(userDataDir)
 
     page = await electronApp.firstWindow()
   })
@@ -15,6 +20,9 @@ test.describe('Simple Browser E2E', () => {
   test.afterAll(async () => {
     if (electronApp) {
       await electronApp.close()
+    }
+    if (userDataDir) {
+      rmSync(userDataDir, { recursive: true, force: true })
     }
   })
 
@@ -40,6 +48,8 @@ test.describe('Simple Browser E2E', () => {
     await expect(quickPick).toBeVisible()
 
     await quickPickInput.fill('close all editors')
+
+    await new Promise((r) => {})
 
     // TODO select option
     // TODO then open simple browser

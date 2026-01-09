@@ -26,7 +26,7 @@ const getElectronExecutablePath = (): string => {
   )
 }
 
-export const launchElectron = async (): Promise<ElectronApplication> => {
+export const launchElectron = async (userDataDir?: string): Promise<ElectronApplication> => {
   const electronExecutablePath = getElectronExecutablePath()
 
   const electronApp = await electron.launch({
@@ -38,6 +38,7 @@ export const launchElectron = async (): Promise<ElectronApplication> => {
       LVCE_SHARED_PROCESS_PATH: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'shared-process', 'src', 'sharedProcessMain.js'),
       LVCE_PRELOAD_URL: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'preload', 'src', 'index.js'),
     },
+    ...(userDataDir ? { userDataDir } : {}),
   })
 
   return electronApp
