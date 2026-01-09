@@ -45,24 +45,50 @@ test.describe('Simple Browser E2E', () => {
     const quickpickInput = window.locator('input').first()
     await quickpickInput.waitFor({ timeout: 15000, state: 'visible' })
 
-    await quickpickInput.fill('simple browser')
+    await quickpickInput.fill('browser')
     await window.waitForTimeout(2000)
 
     const commandPaletteItems = window.locator('[role="option"], .monaco-list-row')
-    const firstItem = commandPaletteItems.first()
-    try {
-      await firstItem.waitFor({ timeout: 10000, state: 'visible' })
-    } catch (error) {
-      const screenshot = await window.screenshot({ path: 'test-results/command-palette-error.png' })
-      const html = await window.content()
-      console.error('Command palette items not found.')
-      throw error
+    const itemCount = await commandPaletteItems.count()
+    console.log(`Found ${itemCount} command palette items when searching for "browser"`)
+
+    let foundSimpleBrowser = false
+    for (let i = 0; i < Math.min(itemCount, 20); i++) {
+      const item = commandPaletteItems.nth(i)
+      const itemText = await item.textContent()
+      console.log(`Command ${i}: ${itemText}`)
+      if (itemText && (itemText.toLowerCase().includes('simple browser') || itemText.toLowerCase().includes('open simple browser'))) {
+        await item.click()
+        foundSimpleBrowser = true
+        break
+      }
     }
 
-    const itemText = await firstItem.textContent()
-    console.log(`Found command palette item: ${itemText}`)
+    if (!foundSimpleBrowser) {
+      await quickpickInput.fill('')
+      await window.waitForTimeout(500)
+      await quickpickInput.fill('simple')
+      await window.waitForTimeout(2000)
+      const itemCount2 = await commandPaletteItems.count()
+      console.log(`Found ${itemCount2} command palette items when searching for "simple"`)
+      for (let i = 0; i < Math.min(itemCount2, 20); i++) {
+        const item = commandPaletteItems.nth(i)
+        const itemText = await item.textContent()
+        console.log(`Command ${i}: ${itemText}`)
+        if (itemText && (itemText.toLowerCase().includes('simple browser') || itemText.toLowerCase().includes('open simple browser'))) {
+          await item.click()
+          foundSimpleBrowser = true
+          break
+        }
+      }
+    }
 
-    await window.keyboard.press('Enter')
+    if (!foundSimpleBrowser) {
+      const screenshot = await window.screenshot({ path: 'test-results/command-palette-error.png' })
+      throw new Error('SimpleBrowser command not found in command palette. Tried searching for "browser" and "simple"')
+    }
+
+    await window.waitForTimeout(1000)
     await window.waitForTimeout(3000)
 
     const simpleBrowserTab = window.locator('.Viewlet.SimpleBrowser')
