@@ -1,9 +1,9 @@
 import { test, expect } from '@playwright/test'
 import { ElectronApplication } from 'playwright'
 import { ChildProcess } from 'node:child_process'
-import * as LaunchElectron from './launchElectron.ts'
-import * as StartBuild from './startBuild.ts'
-import * as StopProcess from './stopProcess.ts'
+import * as LaunchElectron from '../src/launchElectron.ts'
+import * as StartBuild from '../src/startBuild.ts'
+import * as StopProcess from '../src/stopProcess.ts'
 
 test.describe('Simple Browser E2E', () => {
   let electronApp: ElectronApplication | null = null
