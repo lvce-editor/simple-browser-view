@@ -29,15 +29,22 @@ const getElectronExecutablePath = (): string => {
 export const launchElectron = async (userDataDir?: string): Promise<ElectronApplication> => {
   const electronExecutablePath = getElectronExecutablePath()
 
+  const env: Record<string, string> = {
+    ...process.env,
+    LVCE_SHARED_PROCESS_PATH: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'shared-process', 'src', 'sharedProcessMain.js'),
+    LVCE_PRELOAD_URL: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'preload', 'src', 'index.js'),
+  }
+
+  if (userDataDir) {
+    env.XDG_DATA_HOME = userDataDir
+    env.XDG_CACHE_HOME = userDataDir
+  }
+
   const electronApp = await electron.launch({
     executablePath: electronExecutablePath,
     cwd: serverPath,
     args: ['.', '--no-sandbox'],
-    env: {
-      ...process.env,
-      LVCE_SHARED_PROCESS_PATH: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'shared-process', 'src', 'sharedProcessMain.js'),
-      LVCE_PRELOAD_URL: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'preload', 'src', 'index.js'),
-    },
+    env,
     ...(userDataDir ? { userDataDir } : {}),
   })
 
