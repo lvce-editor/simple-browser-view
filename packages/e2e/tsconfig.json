@@ -4,7 +4,7 @@
     "lib": ["esnext", "WebWorker"],
     "checkJs": true,
     "module": "esnext",
-    "types": [],
+    "types": ["node"],
     "moduleResolution": "node",
     "rootDir": ".",
     "allowJs": true,
