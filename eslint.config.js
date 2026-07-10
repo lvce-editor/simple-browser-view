@@ -6,6 +6,7 @@ export default [
     files: ['**/*.ts'],
     rules: {
       'unicorn/prefer-single-call': 'off',
+      '@typescript-eslint/await-thenable': 'off',
     },
   },
 ]
