@@ -7,6 +7,7 @@ export default [
     rules: {
       'unicorn/prefer-single-call': 'off',
       '@typescript-eslint/await-thenable': 'off',
+      '@typescript-eslint/no-misused-promises': 'off',
     },
   },
 ]
