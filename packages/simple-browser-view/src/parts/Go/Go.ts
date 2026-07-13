@@ -3,7 +3,7 @@ import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFun
 import * as IframeSrc from '../IframeSrc/IframeSrc.ts'
 
 export const go = async (state: SimpleBrowserState): Promise<SimpleBrowserState> => {
-  const { inputValue, browserViewId, suggestionsEnabled, hasSuggestionsOverlay, shortcuts } = state
+  const { browserViewId, hasSuggestionsOverlay, inputValue, shortcuts, suggestionsEnabled } = state
   const iframeSrc = IframeSrc.toIframeSrc(inputValue, shortcuts)
   // TODO await promises
   void ElectronWebContentsViewFunctions.setIframeSrc(browserViewId, iframeSrc)

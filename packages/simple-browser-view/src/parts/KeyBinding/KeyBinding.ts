@@ -1,5 +1,5 @@
 export interface KeyBinding {
-  readonly key: number
   readonly command: string
+  readonly key: number
   readonly when: number
 }

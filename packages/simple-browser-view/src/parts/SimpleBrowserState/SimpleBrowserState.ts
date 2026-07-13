@@ -1,21 +1,21 @@
 export interface SimpleBrowserState {
-  readonly focus: number
-  readonly focused: boolean
-  readonly x: number
-  readonly y: number
-  readonly width: number
-  readonly height: number
-  readonly uid: number
-  readonly inputValue: string
   readonly browserViewId: number
-  readonly isLoading: boolean
   readonly canGoBack: boolean
   readonly canGoForward: boolean
-  readonly iframeSrc: string
-  readonly suggestionsEnabled: boolean
+  readonly focus: number
+  readonly focused: boolean
   readonly hasSuggestionsOverlay: boolean
-  readonly shortcuts: readonly any[]
   readonly headerHeight: number
-  readonly uri: string
+  readonly height: number
+  readonly iframeSrc: string
+  readonly inputValue: string
+  readonly isLoading: boolean
+  readonly shortcuts: readonly any[]
+  readonly suggestionsEnabled: boolean
   readonly title: string
+  readonly uid: number
+  readonly uri: string
+  readonly width: number
+  readonly x: number
+  readonly y: number
 }

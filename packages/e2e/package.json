@@ -1,7 +1,6 @@
 {
   "name": "e2e",
   "version": "0.0.0-dev",
-  "description": "",
   "main": "index.js",
   "scripts": {
     "e2e": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js  --only-extension=. --test-path=.",
@@ -9,13 +8,14 @@
     "type-check": "tsc"
   },
   "type": "module",
-  "keywords": [],
-  "author": "",
+  "author": {
+    "name": "Le Vivilet",
+    "email": "levivilet@pm.me"
+  },
   "license": "MIT",
-  "devDependencies": {},
   "dependencies": {
-    "@playwright/test": "^1.57.0",
     "@lvce-editor/test-with-playwright": "^2.17.0",
+    "@playwright/test": "^1.57.0",
     "@types/node": "^25.0.3"
   }
 }

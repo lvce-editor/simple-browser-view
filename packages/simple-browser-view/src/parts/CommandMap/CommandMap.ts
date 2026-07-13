@@ -13,17 +13,17 @@ import * as WrapCommand from '../SimpleBrowserStates/SimpleBrowserStates.ts'
 import * as Terminate from '../Terminate/Terminate.ts'
 
 export const commandMap = {
-  'SimpleBrowser.loadContent': WrapCommand.wrapCommand(LoadContent.loadContent),
   'SimpleBrowser.cancelNavigation': WrapCommand.wrapCommand(CancelNavigation.cancelNavigation),
-  'SimpleBrowser.openDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
-  'SimpleBrowser.dispose': WrapCommand.wrapCommand(Dispose.dispose),
-
+  'SimpleBrowser.create': Create.create,
   // not wrapped
   'SimpleBrowser.diff2': Diff2.diff2,
-  'SimpleBrowser.openExternal': OpenExternal.openExternal,
-  'SimpleBrowser.create': Create.create,
+  'SimpleBrowser.dispose': WrapCommand.wrapCommand(Dispose.dispose),
+
   'SimpleBrowser.getCommandIds': GetCommandIds.getCommandIds,
   'SimpleBrowser.getKeyBindings': GetKeyBindings.getKeyBindings,
+  'SimpleBrowser.loadContent': WrapCommand.wrapCommand(LoadContent.loadContent),
+  'SimpleBrowser.openDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
+  'SimpleBrowser.openExternal': OpenExternal.openExternal,
   'SimpleBrowser.render2': Render2.render2,
   'SimpleBrowser.renderEventListeners': RenderEventListeners.renderEventListeners,
   'SimpleBrowser.terminate': Terminate.terminate,
