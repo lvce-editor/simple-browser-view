@@ -22,7 +22,7 @@ const getUrlFromSavedState = (savedState: any): string => {
 }
 
 export const loadContent = async (state: SimpleBrowserState, savedState: any): Promise<SimpleBrowserState> => {
-  const { x, y, width, height, headerHeight, uri, uid } = state
+  const { headerHeight, height, uid, uri, width, x, y } = state
   const idPart = uri.slice('simple-browser://'.length)
   const id = getId(idPart)
   const iframeSrc = getUrlFromSavedState(savedState)
@@ -45,12 +45,12 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
     }
     return {
       ...state,
+      browserViewId: actualId,
       iframeSrc,
+      shortcuts,
+      suggestionsEnabled,
       // @ts-ignore
       title: 'Simple Browser',
-      browserViewId: actualId,
-      suggestionsEnabled,
-      shortcuts,
     }
   }
 
@@ -61,16 +61,16 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
   await ElectronWebContentsViewFunctions.resizeWebContentsView(browserViewId, browserViewX, browserViewY, browserViewWidth, browserViewHeight)
   Assert.number(browserViewId)
   await ElectronWebContentsViewFunctions.setIframeSrc(browserViewId, iframeSrc)
-  const { title, canGoBack, canGoForward } = await ElectronWebContentsViewFunctions.getStats(browserViewId)
+  const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(browserViewId)
   return {
     ...state,
-    iframeSrc,
-    title,
     browserViewId,
     canGoBack,
     canGoForward,
-    uri: `simple-browser://${browserViewId}`,
-    suggestionsEnabled,
+    iframeSrc,
     shortcuts,
+    suggestionsEnabled,
+    title,
+    uri: `simple-browser://${browserViewId}`,
   }
 }

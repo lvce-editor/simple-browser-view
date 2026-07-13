@@ -1,20 +1,18 @@
 {
   "name": "@lvce-editor/simple-browser-view-monorepo",
   "version": "0.0.0-dev",
-  "description": "",
   "license": "MIT",
   "author": "Lvce Editor",
   "type": "module",
-  "main": "",
   "scripts": {
     "build": "node packages/build/src/build.js",
     "build:static": "node packages/build/src/build-static.js",
     "build:watch": "./packages/build/node_modules/.bin/esbuild --format=esm --bundle --external:node:buffer --external:electron --external:ws --external:node:worker_threads --watch packages/simple-browser-view/src/simpleBrowserViewWorkerMain.ts --outfile=.tmp/dist/dist/simpleBrowserViewWorkerMain.js",
     "dev": "node packages/build/src/dev.js",
     "format": "prettier --write .",
+    "postinstall": "lerna bootstrap --ci",
     "lint": "eslint .",
     "measure": "cd packages/memory && npm run measure",
-    "postinstall": "lerna bootstrap --ci",
     "test": "lerna run test",
     "test-integration": "lerna run test-integration",
     "type-check": "tsc -b"
@@ -30,6 +28,6 @@
     "eslint": "^10.7.0",
     "lerna": "^8.2.2",
     "prettier": "^3.5.3",
-    "typescript": "^5.8.3"
+    "typescript": "^6.0.0"
   }
 }

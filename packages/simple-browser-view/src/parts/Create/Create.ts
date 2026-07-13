@@ -3,25 +3,25 @@ import * as SearchViewStates from '../SimpleBrowserStates/SimpleBrowserStates.ts
 
 export const create = (uid: number, x: number, y: number, width: number, height: number, value: string = ''): SimpleBrowserState => {
   const state: SimpleBrowserState = {
-    uid,
-    inputValue: value,
-    x,
-    y,
-    width,
-    focus: 0,
-    focused: false,
-    height,
     browserViewId: 0,
     canGoBack: false,
     canGoForward: false,
-    iframeSrc: '',
-    isLoading: false,
+    focus: 0,
+    focused: false,
     hasSuggestionsOverlay: false,
+    headerHeight: 35,
+    height,
+    iframeSrc: '',
+    inputValue: value,
+    isLoading: false,
     shortcuts: [],
     suggestionsEnabled: false,
-    headerHeight: 35,
     title: '',
+    uid,
     uri: '',
+    width,
+    x,
+    y,
   }
   SearchViewStates.set(uid, state, state)
   return state

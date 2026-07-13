@@ -4,12 +4,12 @@ import * as ElectronBrowserViewFunctions from '../ElectronBrowserViewFunctions/E
 export const backward = async (state: SimpleBrowserState): Promise<SimpleBrowserState> => {
   const { browserViewId } = state
   await ElectronBrowserViewFunctions.backward(browserViewId)
-  const { url, canGoBack, canGoForward } = await ElectronBrowserViewFunctions.getStats(browserViewId)
+  const { canGoBack, canGoForward, url } = await ElectronBrowserViewFunctions.getStats(browserViewId)
   return {
     ...state,
-    isLoading: false,
     canGoBack,
     canGoForward,
     iframeSrc: url,
+    isLoading: false,
   }
 }
