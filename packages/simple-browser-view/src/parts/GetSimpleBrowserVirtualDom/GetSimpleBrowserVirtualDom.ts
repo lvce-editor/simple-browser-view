@@ -17,8 +17,13 @@ export const getSimpleBrowserVirtualDom = (
       type: VirtualDomElements.Div,
     },
     {
-      childCount: 5,
+      childCount: 3,
       className: ClassNames.SimpleBrowserHeader,
+      type: VirtualDomElements.Div,
+    },
+    {
+      childCount: 3,
+      className: ClassNames.SimlpeBrowserButtonsLeft,
       type: VirtualDomElements.Div,
     },
     {
