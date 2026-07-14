@@ -4,17 +4,17 @@ import { getSimpleBrowserVirtualDom } from '../src/parts/GetSimpleBrowserVirtual
 import * as VirtualDomElements from '../src/parts/VirtualDomElements/VirtualDomElements.ts'
 
 test('groups the left buttons in a container', () => {
-  const dom = getSimpleBrowserVirtualDom(true, true, false, 'https://example.com')
+  const dom = getSimpleBrowserVirtualDom(true, true, false, 'https://example.com', 'Example Domain')
 
-  expect(dom[1]).toEqual({
+  expect(dom[5]).toEqual({
     childCount: 3,
     className: ClassNames.SimpleBrowserHeader,
     type: VirtualDomElements.Div,
   })
-  expect(dom[2]).toEqual({
+  expect(dom[6]).toEqual({
     childCount: 3,
     className: ClassNames.SimlpeBrowserButtonsLeft,
     type: VirtualDomElements.Div,
   })
-  expect([dom[3].title, dom[5].title, dom[7].title]).toEqual(['Back', 'Forward', 'Reload'])
+  expect([dom[7].title, dom[9].title, dom[11].title]).toEqual(['Back', 'Forward', 'Reload'])
 })

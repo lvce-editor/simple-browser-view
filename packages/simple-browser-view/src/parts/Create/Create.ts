@@ -9,7 +9,7 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     focus: 0,
     focused: false,
     hasSuggestionsOverlay: false,
-    headerHeight: 35,
+    headerHeight: 70,
     height,
     iframeSrc: '',
     inputValue: value,
