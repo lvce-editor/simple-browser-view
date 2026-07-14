@@ -43,14 +43,16 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
     if (id !== actualId) {
       await ElectronWebContentsViewFunctions.setIframeSrc(actualId, iframeSrc)
     }
+    const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(actualId)
     return {
       ...state,
       browserViewId: actualId,
+      canGoBack,
+      canGoForward,
       iframeSrc,
       shortcuts,
       suggestionsEnabled,
-      // @ts-ignore
-      title: 'Simple Browser',
+      title,
     }
   }
 

@@ -1,6 +1,7 @@
 import type { VirtualDomNode } from '@lvce-editor/virtual-dom-worker'
 import * as ClassNames from '../ClassNames/ClassNames.ts'
 import * as DomEventListenerFunctions from '../DomEventListenerFunctions/DomEventListenerFunctions.ts'
+import * as GetSimpleBrowserTabsVirtualDom from '../GetSimpleBrowserTabsVirtualDom/GetSimpleBrowserTabsVirtualDom.ts'
 import * as HtmlInputType from '../HtmlInputType/HtmlInputType.ts'
 import * as VirtualDomElements from '../VirtualDomElements/VirtualDomElements.ts'
 
@@ -9,13 +10,16 @@ export const getSimpleBrowserVirtualDom = (
   canGoForward: boolean,
   isLoading: boolean,
   value: string,
+  title: string,
 ): readonly VirtualDomNode[] => {
+  const tabsDom = GetSimpleBrowserTabsVirtualDom.getSimpleBrowserTabsVirtualDom(title)
   return [
     {
-      childCount: 1,
+      childCount: 2,
       className: 'Viewlet SimpleBrowser',
       type: VirtualDomElements.Div,
     },
+    ...tabsDom,
     {
       childCount: 3,
       className: ClassNames.SimpleBrowserHeader,

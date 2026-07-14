@@ -7,4 +7,5 @@ test('create', () => {
     ...Create.create(0, 0, 0, 0, 0, ''),
   }
   expect(state).toBeDefined()
+  expect(state.headerHeight).toBe(70)
 })

@@ -4,6 +4,7 @@ import * as Diff2 from '../Diff2/Diff2.ts'
 import * as Dispose from '../Dispose/Dispose.ts'
 import * as GetCommandIds from '../GetCommandIds/GetCommandIds.ts'
 import * as GetKeyBindings from '../GetKeyBindings/GetKeyBindings.ts'
+import * as HandleTitleUpdated from '../HandleTitleUpdated/HandleTitleUpdated.ts'
 import * as LoadContent from '../LoadContent/LoadContent.ts'
 import * as OpenDevtools from '../OpenDevtools/OpenDevtools.ts'
 import * as OpenExternal from '../OpenExternal/OpenExternal.ts'
@@ -18,9 +19,9 @@ export const commandMap = {
   // not wrapped
   'SimpleBrowser.diff2': Diff2.diff2,
   'SimpleBrowser.dispose': WrapCommand.wrapCommand(Dispose.dispose),
-
   'SimpleBrowser.getCommandIds': GetCommandIds.getCommandIds,
   'SimpleBrowser.getKeyBindings': GetKeyBindings.getKeyBindings,
+  'SimpleBrowser.handleTitleUpdated': WrapCommand.wrapCommand(HandleTitleUpdated.handleTitleUpdated),
   'SimpleBrowser.loadContent': WrapCommand.wrapCommand(LoadContent.loadContent),
   'SimpleBrowser.openDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
   'SimpleBrowser.openExternal': OpenExternal.openExternal,
