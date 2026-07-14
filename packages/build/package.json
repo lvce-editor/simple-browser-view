@@ -3,12 +3,17 @@
   "version": "0.0.0-dev",
   "main": "index.js",
   "type": "module",
+  "scripts": {
+    "measure": "node --experimental-strip-types src/measureMemory.ts",
+    "measure:visible": "node --experimental-strip-types src/measureMemory.ts --no-headless"
+  },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "description": "",
   "devDependencies": {
     "@babel/preset-typescript": "^7.27.1",
+    "@lvce-editor/measure-memory": "^3.1.0",
     "@lvce-editor/verror": "^1.6.0",
     "@rollup/plugin-babel": "^6.0.4",
     "@rollup/plugin-node-resolve": "^16.0.1",
