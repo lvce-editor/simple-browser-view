@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "postinstall": "lerna bootstrap --ci",
     "lint": "eslint .",
-    "measure": "cd packages/memory && npm run measure",
+    "measure": "cd packages/build && npm run measure",
+    "measure:visible": "cd packages/build && npm run measure:visible",
     "test": "lerna run test",
     "test-integration": "lerna run test-integration",
     "type-check": "tsc -b"
