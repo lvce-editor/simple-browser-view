@@ -57,6 +57,16 @@ export const openUrl = async (page: Page, url: string, expectedUrl: string = url
   return waitForWebContentsPage(page, expectedUrl)
 }
 
+export const clickLink = async (webContentsPage: Page, name: string): Promise<void> => {
+  // eslint-disable-next-line e2e/no-direct-click -- exercises navigation initiated inside the WebContentsView
+  await webContentsPage.getByRole('link', { name }).click()
+}
+
+export const clickButton = async (page: Page, name: 'Back' | 'Forward' | 'Reload'): Promise<void> => {
+  // eslint-disable-next-line e2e/no-direct-click -- exercises the actual Simple Browser toolbar button
+  await page.locator('.SimpleBrowserHeader').getByRole('button', { exact: true, name }).click()
+}
+
 export const injectJavaScriptCode = async <T>(webContentsPage: Page, code: string): Promise<T> => {
   return webContentsPage.evaluate(code)
 }
