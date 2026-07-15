@@ -1,4 +1,11 @@
-import { createServer, type Server } from 'node:http'
+import { createServer, type RequestListener, type Server } from 'node:http'
+
+export interface TestResponse {
+  readonly body?: string
+  readonly headers?: Readonly<Record<string, string>>
+  readonly statusCode?: number
+  readonly statusMessage?: string
+}
 
 export interface TestServer {
   readonly close: () => Promise<void>
@@ -20,11 +27,24 @@ const listen = async (server: Server): Promise<number> => {
   return promise
 }
 
-export const start = async (): Promise<TestServer> => {
-  const server = createServer((_request, response) => {
-    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
-    response.end('<!doctype html><html><body><h1 id="greeting">hello world</h1></body></html>')
-  })
+export const respond = ({ body = '', headers = {}, statusCode = 200, statusMessage }: TestResponse): RequestListener => {
+  return (_request, response): void => {
+    if (statusMessage) {
+      response.writeHead(statusCode, statusMessage, headers)
+    } else {
+      response.writeHead(statusCode, headers)
+    }
+    response.end(body)
+  }
+}
+
+const defaultHandler = respond({
+  body: '<!doctype html><html><body><h1 id="greeting">hello world</h1></body></html>',
+  headers: { 'content-type': 'text/html; charset=utf-8' },
+})
+
+export const start = async (handler: RequestListener = defaultHandler): Promise<TestServer> => {
+  const server = createServer(handler)
   const port = await listen(server)
   return {
     close: async (): Promise<void> => {

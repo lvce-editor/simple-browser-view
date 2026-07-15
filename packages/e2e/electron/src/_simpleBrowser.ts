@@ -3,7 +3,17 @@ import type { Page } from '@playwright/test'
 const navigationTimeout = 15_000
 
 const isExpectedPage = (candidate: Page, expectedUrl: string): boolean => {
-  return candidate.url().startsWith(expectedUrl)
+  const candidateUrl = candidate.url()
+  if (candidateUrl.startsWith(expectedUrl)) {
+    return true
+  }
+  try {
+    const parsedUrl = new URL(candidateUrl)
+    const message = parsedUrl.searchParams.get('message') || ''
+    return parsedUrl.pathname.endsWith('/pages/error/error.html') && message.includes(expectedUrl)
+  } catch {
+    return false
+  }
 }
 
 const waitForWebContentsPage = async (page: Page, expectedUrl: string): Promise<Page> => {
@@ -36,11 +46,15 @@ export const show = async (page: Page): Promise<void> => {
   await page.locator('.SimpleBrowser').waitFor({ state: 'visible' })
 }
 
-export const openUrl = async (page: Page, url: string): Promise<Page> => {
+export const setUrl = async (page: Page, url: string): Promise<void> => {
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
   await input.fill(url)
   await input.press('Enter')
-  return waitForWebContentsPage(page, url)
+}
+
+export const openUrl = async (page: Page, url: string, expectedUrl: string = url): Promise<Page> => {
+  await setUrl(page, url)
+  return waitForWebContentsPage(page, expectedUrl)
 }
 
 export const injectJavaScriptCode = async <T>(webContentsPage: Page, code: string): Promise<T> => {
