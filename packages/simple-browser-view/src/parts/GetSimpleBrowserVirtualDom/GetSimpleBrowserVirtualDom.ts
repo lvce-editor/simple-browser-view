@@ -21,7 +21,7 @@ export const getSimpleBrowserVirtualDom = (
     },
     ...tabsDom,
     {
-      childCount: 3,
+      childCount: 4,
       className: ClassNames.SimpleBrowserHeader,
       type: VirtualDomElements.Div,
     },
@@ -86,6 +86,18 @@ export const getSimpleBrowserVirtualDom = (
       childCount: 0,
       className: 'MaskIcon MaskIconLinkExternal',
       onClick: DomEventListenerFunctions.HandleClickOpenExternal,
+      type: VirtualDomElements.Div,
+    },
+    {
+      childCount: 1,
+      className: ClassNames.IconButton,
+      onClick: DomEventListenerFunctions.HandleClickOpenDevtools,
+      title: 'Toggle Developer Tools',
+      type: VirtualDomElements.Button,
+    },
+    {
+      childCount: 0,
+      className: 'MaskIcon MaskIconDebugAlt2',
       type: VirtualDomElements.Div,
     },
   ]
