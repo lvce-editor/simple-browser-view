@@ -62,9 +62,26 @@ export const clickLink = async (webContentsPage: Page, name: string): Promise<vo
   await webContentsPage.getByRole('link', { name }).click()
 }
 
-export const clickButton = async (page: Page, name: 'Back' | 'Forward' | 'Reload'): Promise<void> => {
+export const clickButton = async (page: Page, name: 'Back' | 'Forward' | 'Reload' | 'Toggle Developer Tools'): Promise<void> => {
   // eslint-disable-next-line e2e/no-direct-click -- exercises the actual Simple Browser toolbar button
   await page.locator('.SimpleBrowserHeader').getByRole('button', { exact: true, name }).click()
+}
+
+export const openDevtools = async (page: Page): Promise<Page> => {
+  const context = page.context()
+  const existingPages = new Set(context.pages())
+  await clickButton(page, 'Toggle Developer Tools')
+  const end = Date.now() + navigationTimeout
+  while (Date.now() < end) {
+    const devtoolsPage = context.pages().find((candidate) => !existingPages.has(candidate) && candidate.url().startsWith('devtools://'))
+    if (devtoolsPage) {
+      await devtoolsPage.waitForLoadState('domcontentloaded')
+      return devtoolsPage
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  const pageUrls = context.pages().map((candidate) => candidate.url())
+  throw new Error(`Simple Browser developer tools did not open. Open pages: ${pageUrls.join(', ')}`)
 }
 
 export const injectJavaScriptCode = async <T>(webContentsPage: Page, code: string): Promise<T> => {

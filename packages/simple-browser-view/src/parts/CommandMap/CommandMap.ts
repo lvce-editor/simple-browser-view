@@ -21,6 +21,7 @@ export const commandMap = {
   'SimpleBrowser.dispose': WrapCommand.wrapCommand(Dispose.dispose),
   'SimpleBrowser.getCommandIds': GetCommandIds.getCommandIds,
   'SimpleBrowser.getKeyBindings': GetKeyBindings.getKeyBindings,
+  'SimpleBrowser.handleClickOpenDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
   'SimpleBrowser.handleTitleUpdated': WrapCommand.wrapCommand(HandleTitleUpdated.handleTitleUpdated),
   'SimpleBrowser.loadContent': WrapCommand.wrapCommand(LoadContent.loadContent),
   'SimpleBrowser.openDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
