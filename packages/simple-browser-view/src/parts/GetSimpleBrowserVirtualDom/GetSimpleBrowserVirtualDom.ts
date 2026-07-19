@@ -3,6 +3,7 @@ import * as ClassNames from '../ClassNames/ClassNames.ts'
 import * as DomEventListenerFunctions from '../DomEventListenerFunctions/DomEventListenerFunctions.ts'
 import * as GetSimpleBrowserTabsVirtualDom from '../GetSimpleBrowserTabsVirtualDom/GetSimpleBrowserTabsVirtualDom.ts'
 import * as HtmlInputType from '../HtmlInputType/HtmlInputType.ts'
+import * as MergeClassNames from '../MergeClassNames/MergeClassNames.ts'
 import * as VirtualDomElements from '../VirtualDomElements/VirtualDomElements.ts'
 
 export const getSimpleBrowserVirtualDom = (
@@ -16,7 +17,7 @@ export const getSimpleBrowserVirtualDom = (
   return [
     {
       childCount: 2,
-      className: 'Viewlet SimpleBrowser',
+      className: MergeClassNames.mergeClassNames(ClassNames.Viewlet, ClassNames.SimpleBrowser),
       type: VirtualDomElements.Div,
     },
     ...tabsDom,
@@ -39,7 +40,7 @@ export const getSimpleBrowserVirtualDom = (
     },
     {
       childCount: 0,
-      className: 'MaskIcon MaskIconArrowLeft',
+      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowLeft),
       type: VirtualDomElements.Div,
     },
     {
@@ -51,7 +52,7 @@ export const getSimpleBrowserVirtualDom = (
     },
     {
       childCount: 0,
-      className: 'MaskIcon MaskIconArrowRight',
+      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowRight),
       type: VirtualDomElements.Div,
     },
     {
@@ -63,7 +64,7 @@ export const getSimpleBrowserVirtualDom = (
     },
     {
       childCount: 0,
-      className: isLoading ? 'MaskIcon MaskIconClose' : 'MaskIcon MaskIconRefresh',
+      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, isLoading ? ClassNames.MaskIconClose : ClassNames.MaskIconRefresh),
       type: VirtualDomElements.Div,
     },
     {
@@ -79,13 +80,13 @@ export const getSimpleBrowserVirtualDom = (
     {
       childCount: 1,
       className: ClassNames.IconButton,
+      onClick: DomEventListenerFunctions.HandleClickOpenExternal,
       title: 'Open External',
       type: VirtualDomElements.Button,
     },
     {
       childCount: 0,
-      className: 'MaskIcon MaskIconLinkExternal',
-      onClick: DomEventListenerFunctions.HandleClickOpenExternal,
+      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconLinkExternal),
       type: VirtualDomElements.Div,
     },
     {
@@ -97,7 +98,7 @@ export const getSimpleBrowserVirtualDom = (
     },
     {
       childCount: 0,
-      className: 'MaskIcon MaskIconDebugAlt2',
+      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconDebugAlt2),
       type: VirtualDomElements.Div,
     },
   ]

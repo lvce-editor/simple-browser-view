@@ -1,4 +1,5 @@
 import type { VirtualDomNode } from '@lvce-editor/virtual-dom-worker'
+import * as AriaRoles from '../AriaRoles/AriaRoles.ts'
 import * as ClassNames from '../ClassNames/ClassNames.ts'
 import * as MergeClassNames from '../MergeClassNames/MergeClassNames.ts'
 import * as VirtualDomElements from '../VirtualDomElements/VirtualDomElements.ts'
@@ -12,14 +13,14 @@ export const getSimpleBrowserTabsVirtualDom = (pageTitle: string): readonly Virt
     {
       childCount: 1,
       className: ClassNames.MainTabs,
-      role: 'tablist',
+      role: AriaRoles.TabList,
       type: VirtualDomElements.Div,
     },
     {
       'aria-selected': true,
       childCount: 1,
       className: MergeClassNames.mergeClassNames(ClassNames.MainTab, ClassNames.MainTabSelected),
-      role: 'tab',
+      role: AriaRoles.Tab,
       title,
       type: VirtualDomElements.Div,
     },
