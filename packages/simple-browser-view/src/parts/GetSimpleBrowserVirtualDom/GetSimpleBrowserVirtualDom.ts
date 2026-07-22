@@ -6,6 +6,58 @@ import * as HtmlInputType from '../HtmlInputType/HtmlInputType.ts'
 import * as MergeClassNames from '../MergeClassNames/MergeClassNames.ts'
 import * as VirtualDomElements from '../VirtualDomElements/VirtualDomElements.ts'
 
+const headerNode: VirtualDomNode = {
+  childCount: 4,
+  className: ClassNames.SimpleBrowserHeader,
+  type: VirtualDomElements.Div,
+}
+
+const leftButtonsNode: VirtualDomNode = {
+  childCount: 3,
+  className: ClassNames.SimlpeBrowserButtonsLeft,
+  type: VirtualDomElements.Div,
+}
+
+const backButtonNode: VirtualDomNode = {
+  childCount: 1,
+  className: ClassNames.IconButton,
+  onClick: DomEventListenerFunctions.HandleClickBackward,
+  title: 'Back',
+  type: VirtualDomElements.Button,
+}
+
+const forwardButtonNode: VirtualDomNode = {
+  childCount: 1,
+  className: ClassNames.IconButton,
+  onClick: DomEventListenerFunctions.HandleClickForward,
+  title: 'Forward',
+  type: VirtualDomElements.Button,
+}
+
+const reloadButtonNode: VirtualDomNode = {
+  childCount: 1,
+  className: ClassNames.IconButton,
+  onClick: DomEventListenerFunctions.HandleClickReload,
+  title: 'Reload',
+  type: VirtualDomElements.Button,
+}
+
+const openExternalButtonNode: VirtualDomNode = {
+  childCount: 1,
+  className: ClassNames.IconButton,
+  onClick: DomEventListenerFunctions.HandleClickOpenExternal,
+  title: 'Open External',
+  type: VirtualDomElements.Button,
+}
+
+const openDevtoolsButtonNode: VirtualDomNode = {
+  childCount: 1,
+  className: ClassNames.IconButton,
+  onClick: DomEventListenerFunctions.HandleClickOpenDevtools,
+  title: 'Toggle Developer Tools',
+  type: VirtualDomElements.Button,
+}
+
 export const getSimpleBrowserVirtualDom = (
   canGoBack: boolean,
   canGoForward: boolean,
@@ -21,47 +73,21 @@ export const getSimpleBrowserVirtualDom = (
       type: VirtualDomElements.Div,
     },
     ...tabsDom,
-    {
-      childCount: 4,
-      className: ClassNames.SimpleBrowserHeader,
-      type: VirtualDomElements.Div,
-    },
-    {
-      childCount: 3,
-      className: ClassNames.SimlpeBrowserButtonsLeft,
-      type: VirtualDomElements.Div,
-    },
-    {
-      childCount: 1,
-      className: ClassNames.IconButton,
-      onClick: DomEventListenerFunctions.HandleClickBackward,
-      title: 'Back',
-      type: VirtualDomElements.Button,
-    },
+    headerNode,
+    leftButtonsNode,
+    backButtonNode,
     {
       childCount: 0,
       className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowLeft),
       type: VirtualDomElements.Div,
     },
-    {
-      childCount: 1,
-      className: ClassNames.IconButton,
-      onClick: DomEventListenerFunctions.HandleClickForward,
-      title: 'Forward',
-      type: VirtualDomElements.Button,
-    },
+    forwardButtonNode,
     {
       childCount: 0,
       className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowRight),
       type: VirtualDomElements.Div,
     },
-    {
-      childCount: 1,
-      className: ClassNames.IconButton,
-      onClick: DomEventListenerFunctions.HandleClickReload,
-      title: 'Reload',
-      type: VirtualDomElements.Button,
-    },
+    reloadButtonNode,
     {
       childCount: 0,
       className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, isLoading ? ClassNames.MaskIconClose : ClassNames.MaskIconRefresh),
@@ -77,25 +103,13 @@ export const getSimpleBrowserVirtualDom = (
       type: VirtualDomElements.Input,
       value,
     },
-    {
-      childCount: 1,
-      className: ClassNames.IconButton,
-      onClick: DomEventListenerFunctions.HandleClickOpenExternal,
-      title: 'Open External',
-      type: VirtualDomElements.Button,
-    },
+    openExternalButtonNode,
     {
       childCount: 0,
       className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconLinkExternal),
       type: VirtualDomElements.Div,
     },
-    {
-      childCount: 1,
-      className: ClassNames.IconButton,
-      onClick: DomEventListenerFunctions.HandleClickOpenDevtools,
-      title: 'Toggle Developer Tools',
-      type: VirtualDomElements.Button,
-    },
+    openDevtoolsButtonNode,
     {
       childCount: 0,
       className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconDebugAlt2),
