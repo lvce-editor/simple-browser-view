@@ -7,15 +7,23 @@ import * as VirtualDomHelpers from '../VirtualDomHelpers/VirtualDomHelpers.ts'
 
 const defaultTitle = 'Simple Browser'
 
+const mainTabsNode: VirtualDomNode = {
+  childCount: 1,
+  className: ClassNames.MainTabs,
+  role: AriaRoles.TabList,
+  type: VirtualDomElements.Div,
+}
+
+const tabTitleNode: VirtualDomNode = {
+  childCount: 1,
+  className: ClassNames.TabTitle,
+  type: VirtualDomElements.Span,
+}
+
 export const getSimpleBrowserTabsVirtualDom = (pageTitle: string): readonly VirtualDomNode[] => {
   const title = pageTitle || defaultTitle
   return [
-    {
-      childCount: 1,
-      className: ClassNames.MainTabs,
-      role: AriaRoles.TabList,
-      type: VirtualDomElements.Div,
-    },
+    mainTabsNode,
     {
       'aria-selected': true,
       childCount: 1,
@@ -24,11 +32,7 @@ export const getSimpleBrowserTabsVirtualDom = (pageTitle: string): readonly Virt
       title,
       type: VirtualDomElements.Div,
     },
-    {
-      childCount: 1,
-      className: ClassNames.TabTitle,
-      type: VirtualDomElements.Span,
-    },
+    tabTitleNode,
     VirtualDomHelpers.text(title),
   ]
 }
