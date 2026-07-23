@@ -4,6 +4,7 @@ export const handleDidNavigate = (state: SimpleBrowserState, url: string): Simpl
   return {
     ...state,
     iframeSrc: url,
+    inputValue: url,
     isLoading: false,
   }
 }
