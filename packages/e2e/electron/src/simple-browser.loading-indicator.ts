@@ -3,6 +3,8 @@ import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.loading-indicator'
+// TODO enable when the published Electron editor uses the standalone Simple Browser worker
+export const skip = 1
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   const server = await TestServer.start()

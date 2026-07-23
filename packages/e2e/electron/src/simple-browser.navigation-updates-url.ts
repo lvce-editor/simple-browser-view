@@ -3,6 +3,8 @@ import * as NavigationTest from './_navigationTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 
 export const name = 'simple-browser.navigation-updates-url'
+// TODO enable when the published Electron editor uses the standalone Simple Browser worker
+export const skip = 1
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   const server = await NavigationTest.startServer()
