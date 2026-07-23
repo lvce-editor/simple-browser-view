@@ -4,7 +4,9 @@ import * as Diff2 from '../Diff2/Diff2.ts'
 import * as Dispose from '../Dispose/Dispose.ts'
 import * as GetCommandIds from '../GetCommandIds/GetCommandIds.ts'
 import * as GetKeyBindings from '../GetKeyBindings/GetKeyBindings.ts'
+import * as HandleDidNavigate from '../HandleDidNavigate/HandleDidNavigate.ts'
 import * as HandleTitleUpdated from '../HandleTitleUpdated/HandleTitleUpdated.ts'
+import * as HandleWillNavigate from '../HandleWillNavigate/HandleWillNavigate.ts'
 import * as LoadContent from '../LoadContent/LoadContent.ts'
 import * as OpenDevtools from '../OpenDevtools/OpenDevtools.ts'
 import * as OpenExternal from '../OpenExternal/OpenExternal.ts'
@@ -22,7 +24,9 @@ export const commandMap = {
   'SimpleBrowser.getCommandIds': GetCommandIds.getCommandIds,
   'SimpleBrowser.getKeyBindings': GetKeyBindings.getKeyBindings,
   'SimpleBrowser.handleClickOpenDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
+  'SimpleBrowser.handleDidNavigate': WrapCommand.wrapCommand(HandleDidNavigate.handleDidNavigate),
   'SimpleBrowser.handleTitleUpdated': WrapCommand.wrapCommand(HandleTitleUpdated.handleTitleUpdated),
+  'SimpleBrowser.handleWillNavigate': WrapCommand.wrapCommand(HandleWillNavigate.handleWillNavigate),
   'SimpleBrowser.loadContent': WrapCommand.wrapCommand(LoadContent.loadContent),
   'SimpleBrowser.openDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
   'SimpleBrowser.openExternal': OpenExternal.openExternal,
