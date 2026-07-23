@@ -68,6 +68,10 @@ export const getSimpleBrowserVirtualDom = (
       type: VirtualDomElements.Div,
     },
     {
+      childCount: 1,
+      type: VirtualDomElements.Div,
+    },
+    {
       className: ClassNames.InputBox,
       enterKeyHint: 'Go',
       inputType: HtmlInputType.Url,
