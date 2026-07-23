@@ -19,6 +19,26 @@ test('groups the left buttons in a container', () => {
   expect([dom[7].title, dom[9].title, dom[11].title]).toEqual(['Back', 'Forward', 'Reload'])
 })
 
+test('wraps the input box in a container', () => {
+  const dom = getSimpleBrowserVirtualDom(true, true, false, 'https://example.com', 'Example Domain')
+  const inputIndex = dom.findIndex((node) => node.className === ClassNames.InputBox)
+
+  expect(dom[inputIndex - 1]).toEqual({
+    childCount: 1,
+    type: VirtualDomElements.Div,
+  })
+  expect(dom[inputIndex]).toEqual({
+    className: ClassNames.InputBox,
+    enterKeyHint: 'Go',
+    inputType: 'url',
+    onBlur: 'handleBlur',
+    onFocus: 'handleFocus',
+    onInput: 'handleInput',
+    type: VirtualDomElements.Input,
+    value: 'https://example.com',
+  })
+})
+
 test('renders the developer tools button as the rightmost header control', () => {
   const dom = getSimpleBrowserVirtualDom(true, true, false, 'https://example.com', 'Example Domain')
 
