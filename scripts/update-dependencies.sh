@@ -21,16 +21,17 @@ function updateDependencies {
   if [[ "$OUTPUT" == *"$SUB"* ]]; then
     echo "$OUTPUT"
   else
-    rm -rf node_modules package-lock.json dist
-    npm install
+    rm -rf node_modules dist
   fi
 }
 
-                                                       updateDependencies             &&
-cd packages/build                                   && updateDependencies && cd ../.. &&
-cd packages/e2e                                     && updateDependencies && cd ../.. &&
-cd packages/server                                  && updateDependencies && cd ../.. &&
-cd packages/simple-browser-view                     && updateDependencies && cd ../.. &&
+updateDependencies
+
+for package in packages/*; do
+  cd "$package" && updateDependencies && cd ../..
+done
+
+npm install &&
 
 echo "Great Success!"
 
