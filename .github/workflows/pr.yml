@@ -28,7 +28,7 @@ jobs:
           path: '**/node_modules'
           key: ${{ runner.os }}-cacheNodeModules-${{ steps.nodeModulesCacheKey.outputs.value }}
       - name: npm ci
-        run: npm ci --ignore-scripts && npm run postinstall
+        run: npm ci
         if: steps.npm-cache.outputs.cache-hit != 'true'
       - run: npm run build
       - run: npm run build:static
@@ -52,7 +52,7 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         with:
           path: packages/e2e/.test-with-playwright/electron
-          key: ${{ runner.os }}-simple-browser-electron-${{ hashFiles('packages/server/package-lock.json') }}
+          key: ${{ runner.os }}-simple-browser-electron-${{ hashFiles('package-lock.json') }}
       - name: Electron e2e
         if: matrix.os == 'ubuntu-24.04'
         working-directory: ./packages/e2e
