@@ -1,6 +1,7 @@
 import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserState.ts'
 import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.ts'
 import * as IframeSrc from '../IframeSrc/IframeSrc.ts'
+import * as SimpleBrowserTabs from '../SimpleBrowserTabs/SimpleBrowserTabs.ts'
 
 export const go = async (state: SimpleBrowserState): Promise<SimpleBrowserState> => {
   const { browserViewId, hasSuggestionsOverlay, inputValue, shortcuts, suggestionsEnabled } = state
@@ -11,9 +12,8 @@ export const go = async (state: SimpleBrowserState): Promise<SimpleBrowserState>
   if (suggestionsEnabled && hasSuggestionsOverlay) {
     // void ElectronBrowserViewSuggestions.disposeBrowserView()
   }
-  return {
-    ...state,
+  return SimpleBrowserTabs.update(state, browserViewId, {
     iframeSrc,
     isLoading: true,
-  }
+  })
 }

@@ -7,7 +7,19 @@ test('renders the current page title in the tab strip', () => {
   const oldState = Create.create(1, 0, 0, 800, 600)
   const newState: SimpleBrowserState = {
     ...oldState,
+    browserViewId: 12,
     iframeSrc: 'https://example.com',
+    tabs: [
+      {
+        browserViewId: 12,
+        canGoBack: false,
+        canGoForward: false,
+        iframeSrc: 'https://example.com',
+        inputValue: 'https://example.com',
+        isLoading: false,
+        title: 'Example Domain',
+      },
+    ],
     title: 'Example Domain',
   }
 
