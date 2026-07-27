@@ -9,6 +9,6 @@ export const isEqual = (oldState: SimpleBrowserState, newState: SimpleBrowserSta
     oldState.canGoForward === newState.canGoForward &&
     oldState.iframeSrc === newState.iframeSrc &&
     oldState.isLoading === newState.isLoading &&
-    oldState.title === newState.title
+    oldState.tabs === newState.tabs
   )
 }

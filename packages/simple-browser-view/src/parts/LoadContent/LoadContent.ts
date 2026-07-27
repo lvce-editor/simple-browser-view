@@ -1,4 +1,5 @@
 import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserState.ts'
+import type { SimpleBrowserTab } from '../SimpleBrowserTab/SimpleBrowserTab.ts'
 import * as Assert from '../Assert/Assert.ts'
 import * as ElectronWebContentsView from '../ElectronWebContentsView/ElectronWebContentsView.ts'
 import * as ElectronWebContentsViewFunctions from '../ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.ts'
@@ -44,6 +45,15 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
       await ElectronWebContentsViewFunctions.setIframeSrc(actualId, iframeSrc)
     }
     const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(actualId)
+    const tab: SimpleBrowserTab = {
+      browserViewId: actualId,
+      canGoBack,
+      canGoForward,
+      iframeSrc,
+      inputValue: iframeSrc,
+      isLoading: false,
+      title,
+    }
     return {
       ...state,
       browserViewId: actualId,
@@ -52,6 +62,7 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
       iframeSrc,
       shortcuts,
       suggestionsEnabled,
+      tabs: [tab],
       title,
     }
   }
@@ -64,6 +75,15 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
   Assert.number(browserViewId)
   await ElectronWebContentsViewFunctions.setIframeSrc(browserViewId, iframeSrc)
   const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(browserViewId)
+  const tab: SimpleBrowserTab = {
+    browserViewId,
+    canGoBack,
+    canGoForward,
+    iframeSrc,
+    inputValue: iframeSrc,
+    isLoading: false,
+    title,
+  }
   return {
     ...state,
     browserViewId,
@@ -72,6 +92,7 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
     iframeSrc,
     shortcuts,
     suggestionsEnabled,
+    tabs: [tab],
     title,
     uri: `simple-browser://${browserViewId}`,
   }

@@ -16,6 +16,7 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     isLoading: false,
     shortcuts: [],
     suggestionsEnabled: false,
+    tabs: [],
     title: '',
     uid,
     uri: '',
