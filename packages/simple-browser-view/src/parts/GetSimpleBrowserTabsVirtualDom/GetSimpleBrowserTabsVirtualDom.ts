@@ -67,10 +67,7 @@ const renderTab = (tab: SimpleBrowserTab, activeBrowserViewId: number): readonly
   ]
 }
 
-export const getSimpleBrowserTabsVirtualDom = (
-  tabs: readonly SimpleBrowserTab[],
-  activeBrowserViewId: number,
-): readonly VirtualDomNode[] => {
+export const getSimpleBrowserTabsVirtualDom = (tabs: readonly SimpleBrowserTab[], activeBrowserViewId: number): readonly VirtualDomNode[] => {
   return [
     {
       childCount: tabs.length + 1,
