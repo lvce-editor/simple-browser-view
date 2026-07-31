@@ -7,6 +7,12 @@ import * as HtmlInputType from '../HtmlInputType/HtmlInputType.ts'
 import * as MergeClassNames from '../MergeClassNames/MergeClassNames.ts'
 import * as VirtualDomElements from '../VirtualDomElements/VirtualDomElements.ts'
 
+const simpleBrowserNode: VirtualDomNode = {
+  childCount: 2,
+  className: MergeClassNames.mergeClassNames(ClassNames.Viewlet, ClassNames.SimpleBrowser),
+  type: VirtualDomElements.Div,
+}
+
 const simpleBrowserHeaderNode: VirtualDomNode = {
   childCount: 4,
   className: ClassNames.SimpleBrowserHeader,
@@ -27,12 +33,24 @@ const backButtonNode: VirtualDomNode = {
   type: VirtualDomElements.Button,
 }
 
+const backIconNode: VirtualDomNode = {
+  childCount: 0,
+  className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowLeft),
+  type: VirtualDomElements.Div,
+}
+
 const forwardButtonNode: VirtualDomNode = {
   childCount: 1,
   className: ClassNames.IconButton,
   onClick: DomEventListenerFunctions.HandleClickForward,
   title: 'Forward',
   type: VirtualDomElements.Button,
+}
+
+const forwardIconNode: VirtualDomNode = {
+  childCount: 0,
+  className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowRight),
+  type: VirtualDomElements.Div,
 }
 
 const reloadButtonNode: VirtualDomNode = {
@@ -56,12 +74,24 @@ const openExternalButtonNode: VirtualDomNode = {
   type: VirtualDomElements.Button,
 }
 
+const openExternalIconNode: VirtualDomNode = {
+  childCount: 0,
+  className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconLinkExternal),
+  type: VirtualDomElements.Div,
+}
+
 const openDevtoolsButtonNode: VirtualDomNode = {
   childCount: 1,
   className: ClassNames.IconButton,
   onClick: DomEventListenerFunctions.HandleClickOpenDevtools,
   title: 'Toggle Developer Tools',
   type: VirtualDomElements.Button,
+}
+
+const openDevtoolsIconNode: VirtualDomNode = {
+  childCount: 0,
+  className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconDebugAlt2),
+  type: VirtualDomElements.Div,
 }
 
 export const getSimpleBrowserVirtualDom = (
@@ -74,26 +104,14 @@ export const getSimpleBrowserVirtualDom = (
 ): readonly VirtualDomNode[] => {
   const tabsDom = GetSimpleBrowserTabsVirtualDom.getSimpleBrowserTabsVirtualDom(tabs, activeBrowserViewId)
   return [
-    {
-      childCount: 2,
-      className: MergeClassNames.mergeClassNames(ClassNames.Viewlet, ClassNames.SimpleBrowser),
-      type: VirtualDomElements.Div,
-    },
+    simpleBrowserNode,
     ...tabsDom,
     simpleBrowserHeaderNode,
     simpleBrowserButtonsLeftNode,
     backButtonNode,
-    {
-      childCount: 0,
-      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowLeft),
-      type: VirtualDomElements.Div,
-    },
+    backIconNode,
     forwardButtonNode,
-    {
-      childCount: 0,
-      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconArrowRight),
-      type: VirtualDomElements.Div,
-    },
+    forwardIconNode,
     reloadButtonNode,
     {
       childCount: 0,
@@ -112,16 +130,8 @@ export const getSimpleBrowserVirtualDom = (
       value,
     },
     openExternalButtonNode,
-    {
-      childCount: 0,
-      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconLinkExternal),
-      type: VirtualDomElements.Div,
-    },
+    openExternalIconNode,
     openDevtoolsButtonNode,
-    {
-      childCount: 0,
-      className: MergeClassNames.mergeClassNames(ClassNames.MaskIcon, ClassNames.MaskIconDebugAlt2),
-      type: VirtualDomElements.Div,
-    },
+    openDevtoolsIconNode,
   ]
 }

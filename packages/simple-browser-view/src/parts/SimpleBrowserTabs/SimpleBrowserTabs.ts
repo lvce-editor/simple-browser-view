@@ -14,11 +14,7 @@ export const activate = (state: SimpleBrowserState, tab: SimpleBrowserTab): Simp
   }
 }
 
-export const update = (
-  state: SimpleBrowserState,
-  browserViewId: number,
-  update: Partial<SimpleBrowserTab>,
-): SimpleBrowserState => {
+export const update = (state: SimpleBrowserState, browserViewId: number, update: Partial<SimpleBrowserTab>): SimpleBrowserState => {
   const { browserViewId: activeBrowserViewId, tabs: currentTabs } = state
   const index = currentTabs.findIndex((tab) => tab.browserViewId === browserViewId)
   if (index === -1) {

@@ -18,40 +18,12 @@ export const focus = (id: number): Promise<void> => {
   return EmbedsWorker.invoke('ElectronWebContentsView.focus', id)
 }
 
-export const openDevtools = (id: number): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.openDevtools', id)
-}
-
-export const reload = (id: number): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.reload', id)
-}
-
-export const forward = (id: number): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.forward', id)
-}
-
-export const backward = (id: number): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.backward', id)
-}
-
-export const cancelNavigation = (id: number): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.cancelNavigation', id)
-}
-
 export const show = (id: number): Promise<void> => {
   return EmbedsWorker.invoke('ElectronWebContentsView.show', id)
 }
 
 export const hide = (id: number): Promise<void> => {
   return EmbedsWorker.invoke('ElectronWebContentsView.hide', id)
-}
-
-export const inspectElement = (id: number, x: number, y: number): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.inspectElement', id, x, y)
-}
-
-export const copyImageAt = (id: number, x: number, y: number): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.copyImageAt', id, x, y)
 }
 
 export const setFallthroughKeyBindings = (fallthroughKeyBindings: readonly any[]): Promise<void> => {
