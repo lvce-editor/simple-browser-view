@@ -16,7 +16,7 @@ const isExpectedPage = (candidate: Page, expectedUrl: string): boolean => {
   }
 }
 
-const waitForWebContentsPage = async (page: Page, expectedUrl: string): Promise<Page> => {
+export const waitForWebContentsPage = async (page: Page, expectedUrl: string): Promise<Page> => {
   const context = page.context()
   const end = Date.now() + navigationTimeout
   while (Date.now() < end) {

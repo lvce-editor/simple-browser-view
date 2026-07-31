@@ -1,3 +1,5 @@
+import type { SimpleBrowserTab } from '../SimpleBrowserTab/SimpleBrowserTab.ts'
+
 export interface SimpleBrowserState {
   readonly browserViewId: number
   readonly canGoBack: boolean
@@ -10,8 +12,10 @@ export interface SimpleBrowserState {
   readonly iframeSrc: string
   readonly inputValue: string
   readonly isLoading: boolean
+  readonly overlayIds: readonly string[]
   readonly shortcuts: readonly any[]
   readonly suggestionsEnabled: boolean
+  readonly tabs: readonly SimpleBrowserTab[]
   readonly title: string
   readonly uid: number
   readonly uri: string

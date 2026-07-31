@@ -5,7 +5,7 @@ export const pageBPath = '/b.html'
 
 const pages: Readonly<Record<string, string>> = {
   [pageAPath]: '<!doctype html><html><body><h1>Page A</h1><a href="/b.html">Go to Page B</a></body></html>',
-  [pageBPath]: '<!doctype html><html><body><h1>Page B</h1></body></html>',
+  [pageBPath]: '<!doctype html><html><body><h1>Page B</h1><a href="/a.html">Go to Page A</a></body></html>',
 }
 
 export const startServer = (): Promise<TestServer.TestServer> => {

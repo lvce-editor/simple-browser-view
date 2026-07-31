@@ -1,15 +1,22 @@
 import * as CancelNavigation from '../CancelNavigation/CancelNavigation.ts'
+import * as CloseTab from '../CloseTab/CloseTab.ts'
 import * as Create from '../Create/Create.ts'
 import * as Diff2 from '../Diff2/Diff2.ts'
 import * as Dispose from '../Dispose/Dispose.ts'
 import * as GetCommandIds from '../GetCommandIds/GetCommandIds.ts'
 import * as GetKeyBindings from '../GetKeyBindings/GetKeyBindings.ts'
+import * as HandleDidNavigate from '../HandleDidNavigate/HandleDidNavigate.ts'
 import * as HandleTitleUpdated from '../HandleTitleUpdated/HandleTitleUpdated.ts'
+import * as HandleWillNavigate from '../HandleWillNavigate/HandleWillNavigate.ts'
+import * as HideOverlay from '../HideOverlay/HideOverlay.ts'
 import * as LoadContent from '../LoadContent/LoadContent.ts'
+import * as NewTab from '../NewTab/NewTab.ts'
 import * as OpenDevtools from '../OpenDevtools/OpenDevtools.ts'
 import * as OpenExternal from '../OpenExternal/OpenExternal.ts'
 import * as Render2 from '../Render2/Render2.ts'
 import * as RenderEventListeners from '../RenderEventListeners/RenderEventListeners.ts'
+import * as SelectTab from '../SelectTab/SelectTab.ts'
+import * as ShowOverlay from '../ShowOverlay/ShowOverlay.ts'
 import * as WrapCommand from '../SimpleBrowserStates/SimpleBrowserStates.ts'
 import * as Terminate from '../Terminate/Terminate.ts'
 
@@ -21,12 +28,19 @@ export const commandMap = {
   'SimpleBrowser.dispose': WrapCommand.wrapCommand(Dispose.dispose),
   'SimpleBrowser.getCommandIds': GetCommandIds.getCommandIds,
   'SimpleBrowser.getKeyBindings': GetKeyBindings.getKeyBindings,
+  'SimpleBrowser.handleClickCloseTab': WrapCommand.wrapCommand(CloseTab.closeTab),
+  'SimpleBrowser.handleClickNewTab': WrapCommand.wrapCommand(NewTab.newTab),
   'SimpleBrowser.handleClickOpenDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
+  'SimpleBrowser.handleClickTab': WrapCommand.wrapCommand(SelectTab.selectTab),
+  'SimpleBrowser.handleDidNavigate': WrapCommand.wrapCommand(HandleDidNavigate.handleDidNavigate),
   'SimpleBrowser.handleTitleUpdated': WrapCommand.wrapCommand(HandleTitleUpdated.handleTitleUpdated),
+  'SimpleBrowser.handleWillNavigate': WrapCommand.wrapCommand(HandleWillNavigate.handleWillNavigate),
+  'SimpleBrowser.hideOverlay': WrapCommand.wrapCommand(HideOverlay.hideOverlay),
   'SimpleBrowser.loadContent': WrapCommand.wrapCommand(LoadContent.loadContent),
   'SimpleBrowser.openDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
   'SimpleBrowser.openExternal': OpenExternal.openExternal,
   'SimpleBrowser.render2': Render2.render2,
   'SimpleBrowser.renderEventListeners': RenderEventListeners.renderEventListeners,
+  'SimpleBrowser.showOverlay': WrapCommand.wrapCommand(ShowOverlay.showOverlay),
   'SimpleBrowser.terminate': Terminate.terminate,
 }

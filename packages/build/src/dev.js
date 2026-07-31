@@ -16,8 +16,8 @@ const main = async () => {
       stdio: 'inherit',
       env: {
         ...process.env,
-        LVCE_SHARED_PROCESS_PATH: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'shared-process', 'src', 'sharedProcessMain.js'),
-        LVCE_PRELOAD_URL: join(root, 'packages', 'server', 'node_modules', '@lvce-editor', 'preload', 'src', 'index.js'),
+        LVCE_SHARED_PROCESS_PATH: join(root, 'node_modules', '@lvce-editor', 'shared-process', 'src', 'sharedProcessMain.js'),
+        LVCE_PRELOAD_URL: join(root, 'node_modules', '@lvce-editor', 'preload', 'src', 'index.js'),
       },
     },
   )

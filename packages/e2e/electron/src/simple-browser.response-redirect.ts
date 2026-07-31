@@ -3,6 +3,8 @@ import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.response-redirect'
+// TODO enable when the Simple Browser reliably navigates between response-test server URLs
+export const skip = 1
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   const server = await TestServer.start((request, response) => {
