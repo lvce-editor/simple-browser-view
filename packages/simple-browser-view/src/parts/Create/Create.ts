@@ -14,6 +14,7 @@ export const create = (uid: number, x: number, y: number, width: number, height:
     iframeSrc: '',
     inputValue: value,
     isLoading: false,
+    overlayIds: [],
     shortcuts: [],
     suggestionsEnabled: false,
     tabs: [],

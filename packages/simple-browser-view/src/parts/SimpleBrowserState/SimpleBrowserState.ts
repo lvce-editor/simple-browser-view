@@ -12,6 +12,7 @@ export interface SimpleBrowserState {
   readonly iframeSrc: string
   readonly inputValue: string
   readonly isLoading: boolean
+  readonly overlayIds: readonly string[]
   readonly shortcuts: readonly any[]
   readonly suggestionsEnabled: boolean
   readonly tabs: readonly SimpleBrowserTab[]
