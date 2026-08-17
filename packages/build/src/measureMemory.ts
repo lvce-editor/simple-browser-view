@@ -1,4 +1,5 @@
 import { measureMemory } from '@lvce-editor/measure-memory'
+import { createRequire } from 'node:module'
 import { join } from 'node:path'
 import { root } from './root.js'
 
@@ -10,7 +11,8 @@ const instantiationsPath = join(root, 'packages', 'simple-browser-view')
 
 const workerPath = join(root, '.tmp/dist/dist/simpleBrowserViewWorkerMain.js')
 
-const playwrightPath = import.meta.resolve('../../e2e/node_modules/playwright/index.mjs')
+const e2eRequire = createRequire(new URL('../../e2e/package.json', import.meta.url))
+const playwrightPath = e2eRequire.resolve('playwright')
 
 await measureMemory({
   playwrightPath,
