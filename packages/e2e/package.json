@@ -3,9 +3,9 @@
   "version": "0.0.0-dev",
   "main": "index.js",
   "scripts": {
-    "e2e": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js  --only-extension=. --test-path=.",
-    "e2e:electron": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js --electron --only-extension=. --test-path=./electron --timeout=60000",
-    "e2e:headless": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js  --only-extension=. --test-path=. --headless",
+    "e2e": "test-with-playwright --only-extension=. --test-path=.",
+    "e2e:electron": "test-with-playwright --electron --only-extension=. --test-path=./electron --timeout=60000",
+    "e2e:headless": "test-with-playwright --only-extension=. --test-path=. --headless",
     "type-check": "tsc"
   },
   "type": "module",
