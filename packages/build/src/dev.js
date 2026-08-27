@@ -10,7 +10,7 @@ const main = async () => {
   execa(
     'npx',
 
-    ['electron', '.', '--wait'],
+    ['electron', '--no-sandbox', '.', '--wait'],
     {
       cwd: join(root, 'packages', 'server'),
       stdio: 'inherit',
