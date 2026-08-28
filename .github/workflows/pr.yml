@@ -1,5 +1,8 @@
 name: PR
 
+env:
+  LVCE_ELECTRON_VERSION: v0.110.24
+
 on:
   pull_request:
     branches:
@@ -52,7 +55,7 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         with:
           path: packages/e2e/.test-with-playwright/electron
-          key: ${{ runner.os }}-simple-browser-electron-${{ hashFiles('package-lock.json') }}
+          key: ${{ runner.os }}-simple-browser-electron-${{ env.LVCE_ELECTRON_VERSION }}-${{ hashFiles('package-lock.json') }}
       - name: Start PulseAudio
         if: matrix.os == 'ubuntu-24.04'
         run: |
@@ -62,7 +65,7 @@ jobs:
       - name: Electron e2e
         if: matrix.os == 'ubuntu-24.04'
         working-directory: ./packages/e2e
-        run: xvfb-run -a npm run e2e:electron -- --electron-arg=--alsa-output-device=pulse
+        run: xvfb-run -a npm run e2e:electron -- --electron-version=$LVCE_ELECTRON_VERSION --electron-arg=--alsa-output-device=pulse
       - name: measure
         run: npm run measure
         env:
