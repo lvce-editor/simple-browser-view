@@ -1,5 +1,8 @@
 name: CI
 
+env:
+  LVCE_ELECTRON_VERSION: v0.110.24
+
 on:
   push:
     branches:
@@ -66,6 +69,18 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         working-directory: ./packages/e2e
         run: xvfb-run -a npm run e2e:electron
+      - name: Start PulseAudio
+        if: matrix.os == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes pulseaudio
+          pulseaudio --start --exit-idle-time=-1
+      - name: Audio indicator Electron e2e
+        if: matrix.os == 'ubuntu-24.04'
+        working-directory: ./packages/e2e
+        run: xvfb-run -a npm run e2e:electron -- --filter=simple-browser.audio-tab-indicator --electron-version=$LVCE_ELECTRON_VERSION --electron-arg=--alsa-output-device=pulse
+        env:
+          RUN_AUDIO_INDICATOR_E2E: '1'
       - name: measure
         run: npm run measure
         env:
