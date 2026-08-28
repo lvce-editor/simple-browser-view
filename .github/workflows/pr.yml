@@ -1,7 +1,7 @@
 name: PR
 
 env:
-  LVCE_ELECTRON_VERSION: v0.110.24
+  LVCE_ELECTRON_VERSION: v0.111.2
 
 on:
   pull_request:
