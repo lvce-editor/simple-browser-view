@@ -1,6 +1,7 @@
 import type { Page } from '@playwright/test'
 
 const navigationTimeout = 15_000
+const commandPaletteTimeout = 5000
 
 const isExpectedPage = (candidate: Page, expectedUrl: string): boolean => {
   const candidateUrl = candidate.url()
@@ -35,10 +36,23 @@ export const show = async (page: Page): Promise<void> => {
   await page.locator('.Workbench').waitFor({ state: 'visible' })
   await page.bringToFront()
   const shortcut = process.platform === 'darwin' ? 'Meta+Shift+P' : 'Control+Shift+P'
-  await page.keyboard.press(shortcut)
   const quickPick = page.locator('.QuickPick')
-  await quickPick.waitFor({ state: 'visible' })
   const input = quickPick.locator('input')
+  let lastError: unknown
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.keyboard.press('Escape')
+    await page.keyboard.press(shortcut)
+    try {
+      await input.waitFor({ state: 'visible', timeout: commandPaletteTimeout })
+      lastError = undefined
+      break
+    } catch (error) {
+      lastError = error
+    }
+  }
+  if (lastError) {
+    throw lastError
+  }
   await input.fill('>Simple Browser: Open')
   const command = quickPick.getByRole('option', { exact: true, name: 'Simple Browser: Open' })
   await command.waitFor({ state: 'visible' })
