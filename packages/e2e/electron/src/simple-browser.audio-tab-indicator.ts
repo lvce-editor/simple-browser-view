@@ -2,6 +2,7 @@ import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 
 export const name = 'simple-browser.audio-tab-indicator'
+export const skip = process.env.RUN_AUDIO_INDICATOR_E2E === '1' ? 0 : 1
 
 const createTone = (): Buffer => {
   const sampleRate = 8000
