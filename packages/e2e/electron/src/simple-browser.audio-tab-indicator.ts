@@ -64,7 +64,21 @@ export const test = async ({ expect, page: editorPage }: ElectronTestContext): P
   await webContentsPage.getByRole('button', { name: 'Play' }).click()
   await expect(webContentsPage.locator('body')).toHaveAttribute('data-audio-state', 'playing')
   await expect(audioIndicator).toBeVisible()
-  await expect(audioIndicator).toHaveAttribute('title', 'This tab is playing audio')
+  await expect(audioIndicator).toHaveAttribute('aria-pressed', 'false')
+  await expect(audioIndicator).toHaveAttribute('title', 'Mute tab')
+  await expect(audioIndicator.locator('.MaskIconUnmute')).toBeVisible()
+
+  // eslint-disable-next-line e2e/no-direct-click -- exercises the audio indicator's mute toggle
+  await audioIndicator.click()
+  await expect(audioIndicator).toHaveAttribute('aria-pressed', 'true')
+  await expect(audioIndicator).toHaveAttribute('title', 'Unmute tab')
+  await expect(audioIndicator.locator('.MaskIconMute')).toBeVisible()
+
+  // eslint-disable-next-line e2e/no-direct-click -- exercises the audio indicator's unmute toggle
+  await audioIndicator.click()
+  await expect(audioIndicator).toHaveAttribute('aria-pressed', 'false')
+  await expect(audioIndicator).toHaveAttribute('title', 'Mute tab')
+  await expect(audioIndicator.locator('.MaskIconUnmute')).toBeVisible()
 
   // eslint-disable-next-line e2e/no-direct-click -- stops playback in the embedded page
   await webContentsPage.getByRole('button', { name: 'Stop' }).click()
