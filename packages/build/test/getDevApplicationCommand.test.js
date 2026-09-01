@@ -25,19 +25,20 @@ test('keeps the build watcher alive without an interactive stdin', async () => {
 test('terminates both child processes when the dev script is interrupted', async () => {
   /** @type {string[]} */
   const signals = []
-  /** @returns {Promise<void> & { kill(signal: string): void }} */
+  /** @returns {Promise<void> & { kill(signal?: NodeJS.Signals | number, error?: Error): boolean }} */
   const createChild = () => {
     let resolveChild = () => {}
     /** @type {Promise<void>} */
     const childPromise = new Promise((resolve) => {
       resolveChild = resolve
     })
-    return Object.assign(childPromise, {
-      kill(signal) {
-        signals.push(signal)
-        resolveChild()
-      },
-    })
+    /** @param {NodeJS.Signals | number} [signal] */
+    const kill = (signal = 'SIGTERM') => {
+      signals.push(String(signal))
+      resolveChild()
+      return true
+    }
+    return Object.assign(childPromise, { kill })
   }
   const processObject = new EventEmitter()
   const watcher = createChild()

@@ -1,5 +1,5 @@
 /**
- * @typedef {Promise<unknown> & { kill(signal: string): unknown }} ChildProcessPromise
+ * @typedef {Promise<unknown> & { kill(signal?: NodeJS.Signals | number, error?: Error): unknown }} ChildProcessPromise
  * @typedef {{ off(event: string, listener: () => void): unknown, once(event: string, listener: () => void): unknown }} SignalEmitter
  */
 
