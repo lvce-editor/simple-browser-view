@@ -1,26 +1,23 @@
 import { execa } from 'execa'
 import { root } from './root.js'
-import { join } from 'node:path'
+import { getDevApplicationCommand } from './getDevApplicationCommand.js'
+import { waitForDevProcesses } from './waitForDevProcesses.js'
 
 const main = async () => {
-  execa(`npm`, ['run', 'build:watch'], {
+  await execa('npm', ['run', 'build'], {
     cwd: root,
     stdio: 'inherit',
   })
-  execa(
-    'npx',
-
-    ['electron', '--no-sandbox', '.', '--wait'],
-    {
-      cwd: join(root, 'packages', 'server'),
-      stdio: 'inherit',
-      env: {
-        ...process.env,
-        LVCE_SHARED_PROCESS_PATH: join(root, 'node_modules', '@lvce-editor', 'shared-process', 'src', 'sharedProcessMain.js'),
-        LVCE_PRELOAD_URL: join(root, 'node_modules', '@lvce-editor', 'preload', 'src', 'index.js'),
-      },
-    },
-  )
+  const watcher = execa('npm', ['run', 'build:watch'], {
+    cwd: root,
+    stdio: 'inherit',
+  })
+  const { command, args, cwd } = getDevApplicationCommand(root)
+  const application = execa(command, args, {
+    cwd,
+    stdio: 'inherit',
+  })
+  await waitForDevProcesses({ application, watcher })
 }
 
-main()
+await main()
