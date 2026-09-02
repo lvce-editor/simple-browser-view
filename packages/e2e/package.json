@@ -5,6 +5,7 @@
   "scripts": {
     "e2e": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js  --only-extension=. --test-path=.",
     "e2e:electron": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js --electron --only-extension=. --test-path=./electron --timeout=60000",
+    "e2e:electron:built-in": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js --electron --only-extension=./extension --test-path=./electron --timeout=60000",
     "e2e:headless": "node ./node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js  --only-extension=. --test-path=. --headless",
     "type-check": "tsc"
   },
