@@ -57,7 +57,7 @@ export const show = async (page: Page): Promise<void> => {
   const command = quickPick.getByRole('option', { exact: true, name: 'Simple Browser: Open' })
   await command.waitFor({ state: 'visible' })
   await page.keyboard.press('Enter')
-  await page.locator('.SimpleBrowser').waitFor({ state: 'visible' })
+  await page.locator('.SimpleBrowser').last().waitFor({ state: 'visible' })
 }
 
 export const setUrl = async (page: Page, url: string): Promise<void> => {

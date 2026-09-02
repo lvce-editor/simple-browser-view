@@ -2,6 +2,7 @@ name: CI
 
 env:
   LVCE_ELECTRON_VERSION: v0.111.2
+  LVCE_NEW_TAB_INPUT_ELECTRON_VERSION: v0.111.21
 
 on:
   push:
@@ -69,6 +70,12 @@ jobs:
         if: matrix.os == 'ubuntu-24.04'
         working-directory: ./packages/e2e
         run: xvfb-run -a npm run e2e:electron
+      - name: New tab input Electron e2e
+        if: ${{ always() && matrix.os == 'ubuntu-24.04' }}
+        working-directory: ./packages/e2e
+        run: xvfb-run -a npm run e2e:electron:built-in -- --filter=simple-browser.new-tab-input --electron-version=$LVCE_NEW_TAB_INPUT_ELECTRON_VERSION
+        env:
+          RUN_NEW_TAB_INPUT_E2E: '1'
       - name: Start PulseAudio
         if: matrix.os == 'ubuntu-24.04'
         run: |
