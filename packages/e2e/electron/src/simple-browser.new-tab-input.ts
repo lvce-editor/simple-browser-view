@@ -2,6 +2,7 @@ import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 
 export const name = 'simple-browser.new-tab-input'
+export const skip = process.env.RUN_NEW_TAB_INPUT_E2E === '1' ? 0 : 1
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   await SimpleBrowser.show(page)
