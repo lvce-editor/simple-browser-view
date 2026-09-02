@@ -10,7 +10,7 @@ test('launches LVCE with the local simple browser worker linked', () => {
   const root = '/test/simple-browser-view'
 
   assert.deepEqual(getDevApplicationCommand(root, '/test/bin/lvce'), {
-    args: ['--link', join(root, '.tmp', 'dist'), '--hot-reload', '--wait', root],
+    args: ['--link', join(root, '.tmp', 'dist'), '--hot-reload', `--user-data-dir=${join(root, '.tmp', 'user-data')}`, '--wait', root],
     command: '/test/bin/lvce',
     cwd: root,
   })
