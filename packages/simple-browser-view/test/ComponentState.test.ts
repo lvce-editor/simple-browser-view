@@ -17,9 +17,8 @@ test('reads the latest state and renders edits through the component state comma
   const diff = commandMap['SimpleBrowser.diff2'](1)
   expect(diff.length).toBeGreaterThan(0)
   const commands = commandMap['SimpleBrowser.render2'](1, diff)
-  expect(commands).toEqual(
-    expect.arrayContaining([['Viewlet.setDom2', expect.arrayContaining([expect.objectContaining({ value: 'https://example.com/edited' })])]]),
-  )
+  const editedInput = expect.objectContaining({ value: 'https://example.com/edited' })
+  expect(commands).toEqual(expect.arrayContaining([['Viewlet.setDom2', expect.arrayContaining([editedInput])]]))
   expect(commandMap['SimpleBrowser.diff2'](1)).toEqual([])
 })
 

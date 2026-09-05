@@ -5,7 +5,8 @@ const applyComponentState = (currentState: SimpleBrowserState, state: SimpleBrow
   if (!state || typeof state !== 'object' || Array.isArray(state)) {
     throw new TypeError('SimpleBrowser state must be an object')
   }
-  if (state.uid !== currentState.uid) {
+  const { uid } = state
+  if (uid !== currentState.uid) {
     throw new Error(`SimpleBrowser state uid must remain ${currentState.uid}`)
   }
   return state
