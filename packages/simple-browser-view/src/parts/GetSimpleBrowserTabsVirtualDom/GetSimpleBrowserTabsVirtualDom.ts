@@ -36,18 +36,54 @@ const newTabButtonNode: VirtualDomNode = {
   type: VirtualDomElements.Button,
 }
 
-const renderTab = (tab: SimpleBrowserTab, activeBrowserViewId: number): readonly VirtualDomNode[] => {
+type DropIndicatorPosition = 'after' | 'before' | undefined
+
+const getDropIndicatorStyle = (dropIndicatorPosition: DropIndicatorPosition): string | undefined => {
+  if (dropIndicatorPosition === 'before') {
+    return 'box-shadow:inset 2px 0 0 white;'
+  }
+  if (dropIndicatorPosition === 'after') {
+    return 'box-shadow:inset -2px 0 0 white;'
+  }
+  return undefined
+}
+
+const getDropIndicatorPosition = (tabIndex: number, tabCount: number, tabDropIndex: number): DropIndicatorPosition => {
+  if (tabDropIndex === tabIndex) {
+    return 'before'
+  }
+  if (tabDropIndex === tabCount && tabIndex === tabCount - 1) {
+    return 'after'
+  }
+  return undefined
+}
+
+const renderTab = (
+  tab: SimpleBrowserTab,
+  activeBrowserViewId: number,
+  tabIndex: number,
+  tabCount: number,
+  tabDropIndex: number,
+): readonly VirtualDomNode[] => {
   const isActive = tab.browserViewId === activeBrowserViewId
   const title = tab.title || defaultTitle
   const className = isActive ? MergeClassNames.mergeClassNames(ClassNames.MainTab, ClassNames.MainTabSelected) : ClassNames.MainTab
+  const dropIndicatorPosition = getDropIndicatorPosition(tabIndex, tabCount, tabDropIndex)
   return [
     {
       'aria-selected': isActive,
       childCount: 2,
       className,
       'data-id': String(tab.browserViewId),
+      'data-index': String(tabIndex),
+      draggable: true,
+      onDragEnd: DomEventListenerFunctions.HandleDragEnd,
+      onDragOver: DomEventListenerFunctions.HandleTabDragOver,
+      onDragStart: DomEventListenerFunctions.HandleDragStart,
       onMouseDown: DomEventListenerFunctions.HandleClickTab,
+      onMouseUp: DomEventListenerFunctions.HandleTabMouseUp,
       role: AriaRoles.Tab,
+      ...(dropIndicatorPosition && { style: getDropIndicatorStyle(dropIndicatorPosition) }),
       tabIndex: isActive ? 0 : -1,
       title,
       type: VirtualDomElements.Div,
@@ -67,15 +103,22 @@ const renderTab = (tab: SimpleBrowserTab, activeBrowserViewId: number): readonly
   ]
 }
 
-export const getSimpleBrowserTabsVirtualDom = (tabs: readonly SimpleBrowserTab[], activeBrowserViewId: number): readonly VirtualDomNode[] => {
+export const getSimpleBrowserTabsVirtualDom = (
+  tabs: readonly SimpleBrowserTab[],
+  activeBrowserViewId: number,
+  tabDropIndex: number = -1,
+): readonly VirtualDomNode[] => {
   return [
     {
       childCount: tabs.length + 1,
       className: ClassNames.MainTabs,
+      onDragLeave: DomEventListenerFunctions.HandleDragLeave,
+      onDragOver: DomEventListenerFunctions.HandleTabsDragOver,
+      onDrop: DomEventListenerFunctions.HandleDrop,
       role: AriaRoles.TabList,
       type: VirtualDomElements.Div,
     },
-    ...tabs.flatMap((tab) => renderTab(tab, activeBrowserViewId)),
+    ...tabs.flatMap((tab, tabIndex) => renderTab(tab, activeBrowserViewId, tabIndex, tabs.length, tabDropIndex)),
     newTabButtonNode,
     addIconNode,
   ]
