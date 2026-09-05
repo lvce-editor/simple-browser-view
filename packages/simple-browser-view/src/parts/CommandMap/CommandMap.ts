@@ -7,6 +7,11 @@ import * as GetCommandIds from '../GetCommandIds/GetCommandIds.ts'
 import * as GetComponentState from '../GetComponentState/GetComponentState.ts'
 import * as GetKeyBindings from '../GetKeyBindings/GetKeyBindings.ts'
 import * as HandleDidNavigate from '../HandleDidNavigate/HandleDidNavigate.ts'
+import * as HandleDragLeave from '../HandleDragLeave/HandleDragLeave.ts'
+import * as HandleDragStart from '../HandleDragStart/HandleDragStart.ts'
+import * as HandleDrop from '../HandleDrop/HandleDrop.ts'
+import * as HandleTabDragOver from '../HandleTabDragOver/HandleTabDragOver.ts'
+import * as HandleTabMouseDown from '../HandleTabMouseDown/HandleTabMouseDown.ts'
 import * as HandleTitleUpdated from '../HandleTitleUpdated/HandleTitleUpdated.ts'
 import * as HandleWillNavigate from '../HandleWillNavigate/HandleWillNavigate.ts'
 import * as HideOverlay from '../HideOverlay/HideOverlay.ts'
@@ -16,7 +21,7 @@ import * as OpenDevtools from '../OpenDevtools/OpenDevtools.ts'
 import * as OpenExternal from '../OpenExternal/OpenExternal.ts'
 import * as Render2 from '../Render2/Render2.ts'
 import * as RenderEventListeners from '../RenderEventListeners/RenderEventListeners.ts'
-import * as SelectTab from '../SelectTab/SelectTab.ts'
+import * as ResetTabDrag from '../ResetTabDrag/ResetTabDrag.ts'
 import * as SetComponentState from '../SetComponentState/SetComponentState.ts'
 import * as ShowOverlay from '../ShowOverlay/ShowOverlay.ts'
 import * as WrapCommand from '../SimpleBrowserStates/SimpleBrowserStates.ts'
@@ -34,8 +39,15 @@ export const commandMap = {
   'SimpleBrowser.handleClickCloseTab': WrapCommand.wrapCommand(CloseTab.closeTab),
   'SimpleBrowser.handleClickNewTab': WrapCommand.wrapCommand(NewTab.newTab),
   'SimpleBrowser.handleClickOpenDevtools': WrapCommand.wrapCommand(OpenDevtools.openDevtools),
-  'SimpleBrowser.handleClickTab': WrapCommand.wrapCommand(SelectTab.selectTab),
+  'SimpleBrowser.handleClickTab': WrapCommand.wrapCommand(HandleTabMouseDown.handleTabMouseDown),
   'SimpleBrowser.handleDidNavigate': WrapCommand.wrapCommand(HandleDidNavigate.handleDidNavigate),
+  'SimpleBrowser.handleDragEnd': WrapCommand.wrapCommand(ResetTabDrag.resetTabDrag),
+  'SimpleBrowser.handleDragLeave': WrapCommand.wrapCommand(HandleDragLeave.handleDragLeave),
+  'SimpleBrowser.handleDragStart': WrapCommand.wrapCommand(HandleDragStart.handleDragStart),
+  'SimpleBrowser.handleDrop': WrapCommand.wrapCommand(HandleDrop.handleDrop),
+  'SimpleBrowser.handleTabDragOver': WrapCommand.wrapCommand(HandleTabDragOver.handleTabDragOver),
+  'SimpleBrowser.handleTabMouseUp': WrapCommand.wrapCommand(ResetTabDrag.resetTabDrag),
+  'SimpleBrowser.handleTabsDragOver': WrapCommand.wrapCommand(HandleTabDragOver.handleTabsDragOver),
   'SimpleBrowser.handleTitleUpdated': WrapCommand.wrapCommand(HandleTitleUpdated.handleTitleUpdated),
   'SimpleBrowser.handleWillNavigate': WrapCommand.wrapCommand(HandleWillNavigate.handleWillNavigate),
   'SimpleBrowser.hideOverlay': WrapCommand.wrapCommand(HideOverlay.hideOverlay),
