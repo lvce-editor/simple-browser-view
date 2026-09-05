@@ -4,6 +4,7 @@ import * as Create from '../Create/Create.ts'
 import * as Diff2 from '../Diff2/Diff2.ts'
 import * as Dispose from '../Dispose/Dispose.ts'
 import * as GetCommandIds from '../GetCommandIds/GetCommandIds.ts'
+import * as GetComponentState from '../GetComponentState/GetComponentState.ts'
 import * as GetKeyBindings from '../GetKeyBindings/GetKeyBindings.ts'
 import * as HandleDidNavigate from '../HandleDidNavigate/HandleDidNavigate.ts'
 import * as HandleDragLeave from '../HandleDragLeave/HandleDragLeave.ts'
@@ -21,6 +22,7 @@ import * as OpenExternal from '../OpenExternal/OpenExternal.ts'
 import * as Render2 from '../Render2/Render2.ts'
 import * as RenderEventListeners from '../RenderEventListeners/RenderEventListeners.ts'
 import * as ResetTabDrag from '../ResetTabDrag/ResetTabDrag.ts'
+import * as SetComponentState from '../SetComponentState/SetComponentState.ts'
 import * as ShowOverlay from '../ShowOverlay/ShowOverlay.ts'
 import * as WrapCommand from '../SimpleBrowserStates/SimpleBrowserStates.ts'
 import * as Terminate from '../Terminate/Terminate.ts'
@@ -32,6 +34,7 @@ export const commandMap = {
   'SimpleBrowser.diff2': Diff2.diff2,
   'SimpleBrowser.dispose': WrapCommand.wrapCommand(Dispose.dispose),
   'SimpleBrowser.getCommandIds': GetCommandIds.getCommandIds,
+  'SimpleBrowser.getComponentState': GetComponentState.getComponentState,
   'SimpleBrowser.getKeyBindings': GetKeyBindings.getKeyBindings,
   'SimpleBrowser.handleClickCloseTab': WrapCommand.wrapCommand(CloseTab.closeTab),
   'SimpleBrowser.handleClickNewTab': WrapCommand.wrapCommand(NewTab.newTab),
@@ -53,6 +56,7 @@ export const commandMap = {
   'SimpleBrowser.openExternal': OpenExternal.openExternal,
   'SimpleBrowser.render2': Render2.render2,
   'SimpleBrowser.renderEventListeners': RenderEventListeners.renderEventListeners,
+  'SimpleBrowser.setComponentState': SetComponentState.setComponentState,
   'SimpleBrowser.showOverlay': WrapCommand.wrapCommand(ShowOverlay.showOverlay),
   'SimpleBrowser.terminate': Terminate.terminate,
 }
