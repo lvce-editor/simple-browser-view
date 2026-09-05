@@ -101,8 +101,9 @@ export const getSimpleBrowserVirtualDom = (
   value: string,
   tabs: readonly SimpleBrowserTab[],
   activeBrowserViewId: number,
+  tabDropIndex: number = -1,
 ): readonly VirtualDomNode[] => {
-  const tabsDom = GetSimpleBrowserTabsVirtualDom.getSimpleBrowserTabsVirtualDom(tabs, activeBrowserViewId)
+  const tabsDom = GetSimpleBrowserTabsVirtualDom.getSimpleBrowserTabsVirtualDom(tabs, activeBrowserViewId, tabDropIndex)
   return [
     simpleBrowserNode,
     ...tabsDom,

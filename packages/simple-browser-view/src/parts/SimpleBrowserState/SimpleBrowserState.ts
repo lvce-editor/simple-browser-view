@@ -4,6 +4,7 @@ export interface SimpleBrowserState {
   readonly browserViewId: number
   readonly canGoBack: boolean
   readonly canGoForward: boolean
+  readonly draggedBrowserViewId: number
   readonly focus: number
   readonly focused: boolean
   readonly hasSuggestionsOverlay: boolean
@@ -15,6 +16,7 @@ export interface SimpleBrowserState {
   readonly overlayIds: readonly string[]
   readonly shortcuts: readonly any[]
   readonly suggestionsEnabled: boolean
+  readonly tabDropIndex: number
   readonly tabs: readonly SimpleBrowserTab[]
   readonly title: string
   readonly uid: number
