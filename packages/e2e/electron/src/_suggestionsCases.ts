@@ -1,9 +1,10 @@
 import type { ElectronTestContext } from './_responseTest.ts'
 import * as Fixture from './_browserFixture.ts'
+import * as SimpleBrowser from './_simpleBrowser.ts'
 const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> = {
-  disabled: async ({ address, electronApp, expect, suggestions }): Promise<void> => {
+  disabled: async ({ address, electronApp, expect, page, suggestions }): Promise<void> => {
     await address.fill('known')
-    await address.press('Escape')
+    await page.waitForTimeout(400)
     await expect(suggestions).toHaveCount(0)
     expect(await electronApp.evaluate(() => globalThis['suggestionQueries'])).toEqual([])
   },
@@ -23,9 +24,11 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     await expect(address).toHaveValue('known')
     await expect(address).toBeFocused()
   },
-  'explicit-selection': async ({ address, browser, expect, suggestions }): Promise<void> => {
+  'explicit-selection': async ({ address, browser, electronApp, expect, suggestions }): Promise<void> => {
     await address.fill('known')
     await expect(suggestions.first()).toContainText('known first')
+    await expect.poll(() => electronApp.evaluate(() => globalThis['suggestionQueries'])).toContain('known')
+    expect(await electronApp.evaluate(() => globalThis['suggestionCompletions'])).not.toContain('known')
     await address.press('ArrowDown')
     const selected = browser.locator('[aria-selected="true"].SimpleBrowserSuggestion')
     await expect(selected).toContainText('known first')
@@ -82,12 +85,15 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     await expect(suggestions).toHaveCount(0)
     await expect(address).toHaveValue('')
   },
-  'typed-enter': async ({ address, electronApp, expect, suggestions }): Promise<void> => {
+  'typed-enter': async ({ address, electronApp, expect, page, suggestions }): Promise<void> => {
     await address.fill('https://known.example')
     await expect(suggestions).toContainText(['https://known.example/article'])
     expect(await electronApp.evaluate(() => globalThis['suggestionQueries'])).toEqual([])
     await address.press('Enter')
-    await expect(address).toHaveValue('https://known.example')
+    const destination = await SimpleBrowser.waitForWebContentsPage(page, 'https://known.example')
+    expect(new URL(destination.url()).pathname).toBe('/')
+    await expect(destination.getByRole('heading')).toHaveText('Typed address')
+    await expect(address).toHaveValue(/^https:\/\/known\.example\/?$/)
   },
   'url-history': async ({ address, electronApp, expect, suggestions }): Promise<void> => {
     await address.fill('https://known.example')
@@ -106,7 +112,8 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
       if (url.hostname !== 'suggestqueries.google.com') return net.fetch(request.url, { bypassCustomProtocolHandlers: true })
       const query = url.searchParams.get('q') || ''
       globalThis['suggestionQueries'].push(query)
-      await new Promise((resolve) => setTimeout(resolve, query === 'slow' || query === 'dismiss' ? 400 : 25))
+      const delays: Record<string, number> = { dismiss: 400, known: 800, slow: 400 }
+      await new Promise((resolve) => setTimeout(resolve, delays[query] || 25))
       globalThis['suggestionCompletions'].push(query)
       if (query === 'offline') return new Response('', { status: 503 })
       return Response.json([query, [query + ' result']])
