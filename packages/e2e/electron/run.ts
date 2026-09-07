@@ -5,7 +5,9 @@ import { join } from 'node:path'
 
 const args = process.argv.slice(2)
 const filter = args.find((arg) => arg.startsWith('--filter='))?.slice('--filter='.length) || ''
-const extraArgs = args.filter((arg) => !arg.startsWith('--filter='))
+const version =
+  args.find((arg) => arg.startsWith('--electron-version='))?.slice('--electron-version='.length) || process.env.LVCE_ELECTRON_VERSION || 'v0.113.19'
+const extraArgs = args.filter((arg) => !arg.startsWith('--filter=') && !arg.startsWith('--electron-version='))
 const entries = await readdir(join(import.meta.dirname, 'src'))
 const files = entries
   .filter((file) => file.startsWith('simple-browser.') && file.endsWith('.ts') && file.includes(filter))
@@ -38,7 +40,7 @@ for (const file of files) {
         '--only-extension=./extension',
         '--test-path=./electron',
         '--timeout=60000',
-        `--electron-version=${process.env.LVCE_ELECTRON_VERSION || 'v0.113.19'}`,
+        `--electron-version=${version}`,
         `--filter=${file}`,
         ...extraArgs,
       ],
