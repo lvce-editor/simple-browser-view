@@ -1,6 +1,6 @@
-import { renderAddressEventListeners } from '../RenderAddressEventListeners/RenderAddressEventListeners.ts'
 import type { DomEventListener } from '../DomEventListener/DomEventListener.ts'
 import * as DomEventListenerFunctions from '../DomEventListenerFunctions/DomEventListenerFunctions.ts'
+import { renderAddressEventListeners } from '../RenderAddressEventListeners/RenderAddressEventListeners.ts'
 
 export const renderEventListeners = (): readonly DomEventListener[] => {
   return [
