@@ -3,13 +3,10 @@ import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.tabs'
-// TODO enable when the published Electron editor includes this Simple Browser worker version
-export const skip = 1
 
 const pages: Readonly<Record<string, string>> = {
   '/github.html': '<!doctype html><html><head><title>GitHub</title></head><body><h1>GitHub</h1></body></html>',
-  '/music.html':
-    '<!doctype html><html><head><title>Music</title></head><body><h1>Music</h1><a href="/playing.html">Play Song</a></body></html>',
+  '/music.html': '<!doctype html><html><head><title>Music</title></head><body><h1>Music</h1><a href="/playing.html">Play Song</a></body></html>',
   '/playing.html': '<!doctype html><html><head><title>Now Playing</title></head><body><h1>Now Playing</h1></body></html>',
 }
 
@@ -27,7 +24,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   const musicUrl = `${server.url}/music.html`
   const githubUrl = `${server.url}/github.html`
   const playingUrl = `${server.url}/playing.html`
-  const tabs = page.locator('.SimpleBrowser .MainTab')
+  const tabs = page.locator('.SimpleBrowser .SimpleBrowserTab')
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
   try {
     await SimpleBrowser.show(page)

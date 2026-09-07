@@ -56,6 +56,7 @@ export const start = async (handler: RequestListener = defaultHandler): Promise<
           }
           resolve()
         })
+        server.closeAllConnections()
       })
     },
     url: `http://127.0.0.1:${port}`,
