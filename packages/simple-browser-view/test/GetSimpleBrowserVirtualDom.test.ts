@@ -44,6 +44,7 @@ test('wraps the input box in a container', () => {
     className: ClassNames.InputBox,
     enterKeyHint: 'Go',
     inputType: 'url',
+    name: 'simple-browser-address',
     onBlur: 'handleBlur',
     onFocus: 'handleFocus',
     onInput: 'handleInput',

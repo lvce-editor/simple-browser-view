@@ -3,6 +3,8 @@ import * as RenderEventListeners from '../src/parts/RenderEventListeners/RenderE
 
 test('provides tab lifecycle event parameters', () => {
   expect(RenderEventListeners.renderEventListeners()).toEqual([
+    { name: 'handleFocus', params: ['handleAddressFocus', 'event.target.value'] },
+    { name: 'handleBlur', params: ['handleAddressBlur'] },
     {
       name: 'handleClickCloseTab',
       params: ['handleClickCloseTab', 'event.target.dataset.id'],

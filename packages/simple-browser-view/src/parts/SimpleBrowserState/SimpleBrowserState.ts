@@ -1,6 +1,8 @@
+import type { AddressSelection } from '../GetAddressSelection/GetAddressSelection.ts'
 import type { SimpleBrowserTab } from '../SimpleBrowserTab/SimpleBrowserTab.ts'
 
 export interface SimpleBrowserState {
+  readonly addressSelection?: AddressSelection
   readonly browserViewId: number
   readonly canGoBack: boolean
   readonly canGoForward: boolean

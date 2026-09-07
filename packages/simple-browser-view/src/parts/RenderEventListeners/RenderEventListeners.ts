@@ -1,8 +1,10 @@
+import { renderAddressEventListeners } from '../RenderAddressEventListeners/RenderAddressEventListeners.ts'
 import type { DomEventListener } from '../DomEventListener/DomEventListener.ts'
 import * as DomEventListenerFunctions from '../DomEventListenerFunctions/DomEventListenerFunctions.ts'
 
 export const renderEventListeners = (): readonly DomEventListener[] => {
   return [
+    ...renderAddressEventListeners(),
     {
       name: DomEventListenerFunctions.HandleClickCloseTab,
       params: ['handleClickCloseTab', 'event.target.dataset.id'],
