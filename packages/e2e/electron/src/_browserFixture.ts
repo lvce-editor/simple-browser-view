@@ -111,7 +111,9 @@ export const start = async (
 }
 
 export const toggle = async (page: Page): Promise<void> => {
+  const wasExpanded = (await page.locator('.BrowserFullWidth').count()) > 0
   await pressControl(page.locator('.SimpleBrowserFullWidthButton').last())
+  await page.waitForFunction((previous) => Boolean(document.querySelector('.BrowserFullWidth')) !== previous, wasExpanded)
 }
 
 export const tapControl = async (page: Page): Promise<void> => {
@@ -133,9 +135,9 @@ export const tabMenu = async (page: Page, tab: Locator, label: string): Promise<
 export const gesture = async ({ electronApp }: Pick<ElectronTestContext, 'electronApp'>, url?: string): Promise<void> => {
   await electronApp.evaluate(({ BrowserWindow, webContents }, targetUrl) => {
     const window = BrowserWindow.getAllWindows()[0]
-    window.focus()
+    if (!window.isFocused()) window.focus()
     const target = targetUrl ? webContents.getAllWebContents().find((item) => item.getURL() === targetUrl)! : window.webContents
-    target.focus()
+    if (!target.isFocused()) target.focus()
     for (const type of ['keyDown', 'keyUp', 'keyDown', 'keyUp'] as const) target.sendInputEvent({ keyCode: 'Control', type })
   }, url)
 }

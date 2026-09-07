@@ -54,8 +54,8 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
         }
         case 'mouse-cancels': {
           tap()
-          target.sendInputEvent({ button: 'left', clickCount: 1, type: 'mouseDown', x: 12, y: 12 })
-          target.sendInputEvent({ button: 'left', clickCount: 1, type: 'mouseUp', x: 12, y: 12 })
+          target.sendInputEvent({ button: 'left', clickCount: 1, type: 'mouseDown', x: 300, y: 200 })
+          target.sendInputEvent({ button: 'left', clickCount: 1, type: 'mouseUp', x: 300, y: 200 })
           tap()
 
           break

@@ -48,9 +48,15 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await SimpleBrowser.openUrl(page, oneUrl)
     // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
     await newTabButton.click()
+    await expect(tabs).toHaveCount(2)
+    await expect(input).toHaveValue('')
+    await expect(input).toBeFocused()
     await SimpleBrowser.openUrl(page, twoUrl)
     // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
     await newTabButton.click()
+    await expect(tabs).toHaveCount(3)
+    await expect(input).toHaveValue('')
+    await expect(input).toBeFocused()
     await SimpleBrowser.openUrl(page, threeUrl)
     await expect(tabs).toHaveCount(3)
 

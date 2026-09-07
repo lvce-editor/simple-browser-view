@@ -108,9 +108,21 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     await expect(page.locator('.Workbench')).toBeVisible()
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
   },
-  'reveal-pane': async ({ expect, guest, page }): Promise<void> => {
+  'reveal-pane': async ({ electronApp, expect, guest, page }): Promise<void> => {
     await guest.locator('#draft').fill('retained draft')
     await Fixture.toggle(page)
+    await expect
+      .poll(() =>
+        electronApp.evaluate(
+          ({ webContents }, url) =>
+            webContents
+              .getAllWebContents()
+              .find((item) => item.getURL() === url)
+              ?.isFocused(),
+          guest.url(),
+        ),
+      )
+      .toBe(true)
     await Fixture.command(page, 'Layout: Show Panel')
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
     await expect(page.locator('.Panel')).toBeVisible()

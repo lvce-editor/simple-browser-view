@@ -14,27 +14,6 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     expect(await address.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd])).toEqual([0, `${server.url}/one`.length])
     await expect(browser).toBeAttached()
   },
-  'background-link': async ({ address, browser, electronApp, expect, guest, page, server, tabs }): Promise<void> => {
-    const link = guest.getByRole('link', { name: 'Background link' })
-    // eslint-disable-next-line e2e/no-direct-click -- exercises real link opening gestures in an embedded page
-    await link.click({})
-    await expect(tabs).toHaveCount(2)
-    await expect(address).toHaveValue(`${server.url}/one`)
-    await expect(tabs.first()).toHaveAttribute('aria-selected', 'true')
-    await expect
-      .poll(() =>
-        electronApp.evaluate(
-          ({ webContents }, url) =>
-            webContents
-              .getAllWebContents()
-              .find((item) => item.getURL() === url)
-              ?.isFocused(),
-          guest.url(),
-        ),
-      )
-      .toBe(true)
-    await expect(browser).toBeAttached()
-  },
   'control-click': async ({ address, browser, electronApp, expect, guest, page, server, tabs }): Promise<void> => {
     const link = guest.getByRole('link', { name: 'Next page' })
     // eslint-disable-next-line e2e/no-direct-click -- exercises real link opening gestures in an embedded page
@@ -62,11 +41,11 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     await expect(guest.locator('#section')).toBeInViewport()
     await expect(browser).toBeAttached()
   },
-  'history-shortcut': async ({ address, browser, expect, page }): Promise<void> => {
+  'history-shortcut': async ({ address, expect, page, server }): Promise<void> => {
     await address.focus()
     await address.press('Control+h')
     await expect(page.locator('.Main')).toContainText('History')
-    await expect(browser).toBeAttached()
+    await expect(page.locator('.Main')).toContainText(server.url)
   },
   'middle-click': async ({ address, browser, electronApp, expect, guest, page, server, tabs }): Promise<void> => {
     const link = guest.getByRole('link', { name: 'Next page' })
@@ -109,6 +88,13 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     await expect(address).toHaveValue(`${server.url}/one`)
     await expect(tabs).toHaveCount(1)
     await expect(browser).toBeAttached()
+  },
+  'target-blank': async ({ address, expect, guest, server, tabs }): Promise<void> => {
+    await Fixture.pressControl(guest.getByRole('link', { name: 'Background link' }))
+    await expect(tabs).toHaveCount(2)
+    await expect(address).toHaveValue(`${server.url}/two`)
+    const opened = tabs.nth(1)
+    await expect(opened).toHaveAttribute('aria-selected', 'true')
   },
   'updates-url': async ({ browser, expect }): Promise<void> => {
     await expect(browser).toBeAttached()

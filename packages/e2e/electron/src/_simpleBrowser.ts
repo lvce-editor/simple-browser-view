@@ -34,6 +34,9 @@ export const waitForWebContentsPage = async (page: Page, expectedUrl: string): P
 
 export const show = async (page: Page): Promise<void> => {
   page.context().setDefaultTimeout(10_000)
+  await page
+    .context()
+    .route('https://example.com/**', (route) => route.fulfill({ body: '<title>Initial browser page</title>', contentType: 'text/html' }))
   await page.locator('.Workbench').waitFor({ state: 'visible' })
   await page.bringToFront()
   const shortcut = process.platform === 'darwin' ? 'Meta+Shift+P' : 'Control+Shift+P'
@@ -59,6 +62,8 @@ export const show = async (page: Page): Promise<void> => {
   await command.waitFor({ state: 'visible' })
   await page.keyboard.press('Enter')
   await page.locator('.SimpleBrowser').last().waitFor({ state: 'visible' })
+  await waitForWebContentsPage(page, 'https://example.com')
+  await page.locator('.SimpleBrowserHeader .MaskIconRefresh').waitFor({ state: 'visible' })
 }
 
 export const setUrl = async (page: Page, url: string): Promise<void> => {
@@ -85,7 +90,10 @@ export const clickButton = async (page: Page, name: 'Back' | 'Forward' | 'Reload
 export const openDevtools = async (page: Page): Promise<Page> => {
   const context = page.context()
   const existingPages = new Set(context.pages())
-  await clickButton(page, 'Toggle Developer Tools')
+  // eslint-disable-next-line e2e/no-direct-click -- opens the actual browser toolbar menu
+  await page.locator('.SimpleBrowserHeader').getByRole('button', { exact: true, name: 'Customize and control Simple Browser' }).click()
+  // eslint-disable-next-line e2e/no-direct-click -- selects the browser DevTools action
+  await page.getByRole('menuitem', { exact: true, name: 'Toggle Developer Tools' }).click()
   const end = Date.now() + navigationTimeout
   while (Date.now() < end) {
     const devtoolsPage = context.pages().find((candidate) => !existingPages.has(candidate) && candidate.url().startsWith('devtools://'))

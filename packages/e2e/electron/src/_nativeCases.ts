@@ -3,7 +3,7 @@ import * as Fixture from './_browserFixture.ts'
 interface NativeMenuEntry {
   readonly enabled: boolean
   readonly label: string
-  readonly role: string
+  readonly role: string | null
 }
 interface NativeFixture extends Fixture.BrowserFixture {
   readonly choose: (label: string) => Promise<void>
@@ -66,7 +66,7 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     await guest.locator('#draft').selectText()
     const entries = await openMenu('#draft')
     for (const role of ['undo', 'redo', 'cut', 'copy', 'paste', 'selectall'])
-      expect(entries.some((item) => item.role.toLowerCase() === role)).toBe(true)
+      expect(entries.some((item) => item.role?.toLowerCase() === role)).toBe(true)
     expect(entries.find((item) => item.role === 'copy')?.enabled).toBe(true)
   },
   'full-width-menu': async ({ address, browser, choose, expect, openMenu, page, server, tabs }): Promise<void> => {
@@ -138,7 +138,7 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     await guest.locator('#draft').selectText()
     const entries = await openMenu('#draft')
     for (const role of ['undo', 'redo', 'cut', 'copy', 'paste', 'selectall'])
-      expect(entries.some((item) => item.role.toLowerCase() === role)).toBe(true)
+      expect(entries.some((item) => item.role?.toLowerCase() === role)).toBe(true)
     await electronApp.evaluate(({ clipboard }) => clipboard.writeText('pasted from native menu'))
     await choose('Paste')
     await expect(guest.locator('#draft')).toHaveValue('pasted from native menu')
