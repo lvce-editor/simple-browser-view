@@ -123,7 +123,7 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
         ),
       )
       .toBe(true)
-    await Fixture.command(page, 'Layout: Show Panel')
+    await Fixture.command(page, 'Layout: Toggle Panel')
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
     await expect(page.locator('.Panel')).toBeVisible()
   },

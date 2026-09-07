@@ -65,9 +65,8 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     await guest.locator('#draft').fill('editable text')
     await guest.locator('#draft').selectText()
     const entries = await openMenu('#draft')
-    for (const role of ['undo', 'redo', 'cut', 'copy', 'paste', 'selectall'])
-      expect(entries.some((item) => item.role?.toLowerCase() === role)).toBe(true)
-    expect(entries.find((item) => item.role === 'copy')?.enabled).toBe(true)
+    for (const label of ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All']) expect(entries.some((item) => item.label === label)).toBe(true)
+    expect(entries.find((item) => item.label === 'Copy')?.enabled).toBe(true)
   },
   'full-width-menu': async ({ address, browser, choose, expect, openMenu, page, server, tabs }): Promise<void> => {
     await Fixture.toggle(page)
@@ -136,10 +135,9 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
   paste: async ({ choose, electronApp, expect, guest, openMenu }): Promise<void> => {
     await guest.locator('#draft').fill('editable text')
     await guest.locator('#draft').selectText()
-    const entries = await openMenu('#draft')
-    for (const role of ['undo', 'redo', 'cut', 'copy', 'paste', 'selectall'])
-      expect(entries.some((item) => item.role?.toLowerCase() === role)).toBe(true)
     await electronApp.evaluate(({ clipboard }) => clipboard.writeText('pasted from native menu'))
+    const entries = await openMenu('#draft')
+    for (const label of ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All']) expect(entries.some((item) => item.label === label)).toBe(true)
     await choose('Paste')
     await expect(guest.locator('#draft')).toHaveValue('pasted from native menu')
   },
