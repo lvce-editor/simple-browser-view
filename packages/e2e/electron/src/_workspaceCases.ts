@@ -31,8 +31,9 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     expect(await guest.evaluate(() => scrollY)).toBe(200)
     expect(requests.filter((path) => path === '/one')).toHaveLength(1)
   },
-  'gesture-address': async ({ electronApp, expect, guest, page }): Promise<void> => {
+  'gesture-address': async ({ address, electronApp, expect, guest, page }): Promise<void> => {
     await guest.locator('#draft').fill('retained draft')
+    await address.focus()
     await Fixture.gesture({ electronApp })
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(1)
     await Fixture.toggle(page)
@@ -41,6 +42,7 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
   'gesture-disabled': async ({ electronApp, expect, guest, page }): Promise<void> => {
     await guest.locator('#draft').fill('retained draft')
     await Fixture.gesture({ electronApp })
+    await page.waitForTimeout(450)
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
     await Fixture.toggle(page)
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(1)

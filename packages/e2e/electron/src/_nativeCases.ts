@@ -82,7 +82,9 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
   'inspect-element': async ({ choose, electronApp, expect, guest, openMenu }): Promise<void> => {
     const entries = await openMenu('h1')
     expect(entries.some((item) => item.label === 'Toggle Developer Tools')).toBe(true)
+    const expected = await electronApp.evaluate(() => globalThis['browserContextCoordinates'])
     await choose('Inspect Element')
+    await expect.poll(() => electronApp.evaluate(() => globalThis['browserInspection'])).toEqual(expected)
     await expect
       .poll(() =>
         electronApp.evaluate(
@@ -107,7 +109,9 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     }, guest.url())
     const entries = await openMenu('h1')
     expect(entries.some((item) => item.label === 'Toggle Developer Tools')).toBe(true)
+    const expected = await electronApp.evaluate(() => globalThis['browserContextCoordinates'])
     await choose('Inspect Element')
+    await expect.poll(() => electronApp.evaluate(() => globalThis['browserInspection'])).toEqual(expected)
     await expect
       .poll(() =>
         electronApp.evaluate(
@@ -144,6 +148,17 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
 export const run = async (context: ElectronTestContext, scenario: string): Promise<void> => {
   const fixture = await Fixture.start(context)
   const { electronApp, expect, guest } = fixture
+  await electronApp.evaluate(({ webContents }, url) => {
+    const target = webContents.getAllWebContents().find((item) => item.getURL() === url)!
+    target.on('context-menu', (_event, params) => {
+      Reflect.set(globalThis, 'browserContextCoordinates', { id: target.id, x: params.x, y: params.y })
+    })
+    const inspect = target.inspectElement.bind(target)
+    target.inspectElement = (x: number, y: number): void => {
+      Reflect.set(globalThis, 'browserInspection', { id: target.id, x, y })
+      inspect(x, y)
+    }
+  }, guest.url())
   await electronApp.evaluate(({ Menu }) => {
     // eslint-disable-next-line @typescript-eslint/unbound-method -- retain the original prototype method for restoration
     Reflect.set(globalThis, 'originalBrowserMenuPopup', Menu.prototype.popup)
