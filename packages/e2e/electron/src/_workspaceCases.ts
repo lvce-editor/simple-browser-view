@@ -4,13 +4,14 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
   'address-selection': async ({ address, electronApp, expect, guest, page }): Promise<void> => {
     await guest.locator('#draft').fill('retained draft')
     await Fixture.pressControl(address)
+    await address.evaluate(async () => new Promise((resolve) => setTimeout(resolve, 0)))
     await address.fill('unfinished address')
     await address.evaluate((element: HTMLInputElement) => element.setSelectionRange(2, 8))
     await Fixture.gesture({ electronApp })
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(1)
     await expect(address).toBeFocused()
     await expect(address).toHaveValue('unfinished address')
-    expect(await address.evaluate((element: HTMLInputElement) => [element.selectionStart, element.selectionEnd])).toEqual([2, 8])
+    await expect.poll(() => address.evaluate((element: HTMLInputElement) => [element.selectionStart, element.selectionEnd])).toEqual([2, 8])
   },
   'escape-keeps-layout': async ({ expect, guest, page }): Promise<void> => {
     await guest.locator('#draft').fill('retained draft')

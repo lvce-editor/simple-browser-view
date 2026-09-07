@@ -84,7 +84,7 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
   'reload-preserves-url': async ({ address, browser, expect, guest, page, server, tabs }): Promise<void> => {
     const token = await guest.evaluate(() => window['documentToken'])
     await SimpleBrowser.clickButton(page, 'Reload')
-    await expect.poll(() => guest.evaluate(() => window['documentToken'])).not.toBe(token)
+    await guest.waitForFunction((previous) => Boolean(window['documentToken']) && window['documentToken'] !== previous, token)
     await expect(address).toHaveValue(`${server.url}/one`)
     await expect(tabs).toHaveCount(1)
     await expect(browser).toBeAttached()
