@@ -21,9 +21,23 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
   try {
     switch (scenario) {
       case 'downloads': {
-        await choose(page, 'Downloads')
-        await expect(page.locator('.Main')).toContainText('Downloads')
-
+        await electronApp.evaluate(({ shell }) => {
+          // eslint-disable-next-line @typescript-eslint/unbound-method -- retain the native method for restoration
+          Reflect.set(globalThis, 'originalShowItemInFolder', shell.showItemInFolder)
+          shell.showItemInFolder = (path: string): void => {
+            Reflect.set(globalThis, 'browserDownloadsPath', path)
+          }
+        })
+        try {
+          await choose(page, 'Downloads')
+          const expected = process.env.XDG_DOWNLOAD_DIR
+          expect(expected).toBeTruthy()
+          await expect.poll(() => electronApp.evaluate(() => globalThis['browserDownloadsPath'])).toBe(expected)
+        } finally {
+          await electronApp.evaluate(({ shell }) => {
+            shell.showItemInFolder = globalThis['originalShowItemInFolder']
+          })
+        }
         break
       }
       case 'history': {
@@ -62,6 +76,24 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
           )
           .toBe(false)
 
+        break
+      }
+      case 'open-external': {
+        await electronApp.evaluate(({ shell }) => {
+          // eslint-disable-next-line @typescript-eslint/unbound-method -- retain the native method for restoration
+          Reflect.set(globalThis, 'originalOpenExternal', shell.openExternal)
+          shell.openExternal = async (url: string): Promise<void> => {
+            Reflect.set(globalThis, 'browserExternalUrl', url)
+          }
+        })
+        try {
+          await choose(page, 'Open in Default Browser')
+          await expect.poll(() => electronApp.evaluate(() => globalThis['browserExternalUrl'])).toBe(`${fixture.server.url}/one`)
+        } finally {
+          await electronApp.evaluate(({ shell }) => {
+            shell.openExternal = globalThis['originalOpenExternal']
+          })
+        }
         break
       }
       case 'zoom-in': {

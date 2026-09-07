@@ -11,6 +11,17 @@ interface NativeFixture extends Fixture.BrowserFixture {
 }
 
 const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
+  'copy-image': async ({ choose, electronApp, expect, openMenu }): Promise<void> => {
+    await electronApp.evaluate(({ clipboard }) => clipboard.clear())
+    await openMenu('#picture')
+    await choose('Copy Image')
+    await expect.poll(() => electronApp.evaluate(({ clipboard }) => clipboard.readImage().isEmpty())).toBe(false)
+  },
+  'copy-image-address': async ({ choose, electronApp, expect, openMenu, server }): Promise<void> => {
+    await openMenu('#picture')
+    await choose('Copy Image Address')
+    await expect.poll(() => electronApp.evaluate(({ clipboard }) => clipboard.readText())).toBe(`${server.url}/picture.png`)
+  },
   'copy-link': async ({ choose, electronApp, expect, openMenu, server }): Promise<void> => {
     const entries = await openMenu('a[href="/two"]:not([target])')
     expect(entries.some((item) => item.label === 'Open Link in New Tab')).toBe(true)
@@ -23,6 +34,7 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     await choose('Copy')
     await expect.poll(() => electronApp.evaluate(({ clipboard }) => clipboard.readText())).toBe('One')
   },
+
   'devtools-menu': async ({ choose, electronApp, expect, guest, openMenu }): Promise<void> => {
     const entries = await openMenu('h1')
     expect(entries.some((item) => item.label === 'Toggle Developer Tools')).toBe(true)
@@ -40,6 +52,26 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
       )
       .toBe(true)
     expect(await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.isDevToolsOpened())).toBe(false)
+  },
+  'devtools-origin': async ({ choose, electronApp, expect, guest, newTab, openMenu }): Promise<void> => {
+    await openMenu('h1')
+    const other = await newTab('/two')
+    await choose('Toggle Developer Tools')
+    await expect
+      .poll(() =>
+        electronApp.evaluate(
+          ({ webContents }, urls) =>
+            urls.map((url) => {
+              const contents = webContents.getAllWebContents()
+              for (const item of contents) {
+                if (item.getURL() === url) return item.isDevToolsOpened()
+              }
+              return undefined
+            }),
+          [guest.url(), other.url()],
+        ),
+      )
+      .toEqual([true, false])
   },
   'devtools-shortcut': async ({ electronApp, expect, guest }): Promise<void> => {
     await electronApp.evaluate(({ webContents }, url) => {
@@ -124,6 +156,13 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
       )
       .toBe(true)
     expect(await electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.isDevToolsOpened())).toBe(false)
+  },
+  'open-image-background': async ({ address, choose, expect, openMenu, server, tabs }): Promise<void> => {
+    await openMenu('#picture')
+    await choose('Open Image in New Tab')
+    await expect(tabs).toHaveCount(2)
+    await expect(address).toHaveValue(`${server.url}/one`)
+    await expect(tabs.first()).toHaveAttribute('aria-selected', 'true')
   },
   'open-link-background': async ({ address, choose, expect, openMenu, server, tabs }): Promise<void> => {
     const entries = await openMenu('a[href="/two"]:not([target])')

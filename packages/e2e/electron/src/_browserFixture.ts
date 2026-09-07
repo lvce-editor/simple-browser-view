@@ -74,10 +74,15 @@ export const start = async (
   const server = await TestServer.start((request, response) => {
     const path = request.url || '/'
     requests.push(path)
+    if (path === '/picture.png') {
+      response.writeHead(200, { 'content-type': 'image/png' })
+      response.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+afooAAAAASUVORK5CYII=', 'base64'))
+      return
+    }
     const title = ['/two', '/three'].includes(path.split('?', 1)[0]) ? { '/three': 'Three', '/two': 'Two' }[path.split('?', 1)[0]] : 'One'
     response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
     response.end(
-      `<!doctype html><html><head><title>${title}</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='red'/%3E%3C/svg%3E"></head><body style="margin:20px"><h1>${title}</h1><input id="draft" aria-label="Draft"><textarea aria-label="Notes"></textarea><a href="/two">Next page</a><a href="/two" target="_blank">Background link</a><a href="#section">Section link</a><button id="push" onclick="history.pushState({},'', '/pushed')">Push state</button><div style="height:2000px"></div><h2 id="section">Section</h2><script>window.documentToken=crypto.randomUUID()</script></body></html>`,
+      `<!doctype html><html><head><title>${title}</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='red'/%3E%3C/svg%3E"></head><body style="margin:20px"><h1>${title}</h1><img id="picture" src="/picture.png" width="24" height="24"><input id="draft" aria-label="Draft"><textarea aria-label="Notes"></textarea><a href="/two">Next page</a><a href="/two" target="_blank">Background link</a><a href="#section">Section link</a><button id="push" onclick="history.pushState({},'', '/pushed')">Push state</button><div style="height:2000px"></div><h2 id="section">Section</h2><script>window.documentToken=crypto.randomUUID()</script></body></html>`,
     )
   })
   await context.page.evaluate((values) => {

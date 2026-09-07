@@ -19,7 +19,8 @@ for (const file of files) {
     continue
   }
   const profile = await mkdtemp(join(tmpdir(), 'simple-browser-e2e-'))
-  const env = { ...process.env, SIMPLE_BROWSER_TEST_NAME: file, SIMPLE_BROWSER_TEST_PROFILE: profile }
+  const env = { ...process.env, SIMPLE_BROWSER_TEST_NAME: file, SIMPLE_BROWSER_TEST_PROFILE: profile, XDG_DOWNLOAD_DIR: join(profile, 'downloads') }
+  await mkdir(env.XDG_DOWNLOAD_DIR, { recursive: true })
   for (const kind of ['CONFIG', 'DATA', 'CACHE', 'STATE']) env[`XDG_${kind}_HOME`] = join(profile, kind.toLowerCase())
   for (const name of ['lvce', 'lvce-oss']) {
     const config = join(profile, 'config', name)
@@ -27,6 +28,8 @@ for (const file of files) {
     await writeFile(join(config, 'settings.json'), '{}')
   }
   try {
+    process.stdout.write(`RUN ${file}\n`)
+    const processGroup = process.platform !== 'win32'
     const child = spawn(
       process.execPath,
       [
@@ -39,11 +42,22 @@ for (const file of files) {
         `--filter=${file}`,
         ...extraArgs,
       ],
-      { env, stdio: 'inherit' },
+      { detached: processGroup, env, stdio: 'inherit' },
     )
     const code = await new Promise<number>((resolve, reject) => {
-      child.once('error', reject)
-      child.once('exit', (value) => resolve(value ?? 1))
+      const deadline = setTimeout(() => {
+        process.stderr.write(`FAIL ${file}: Electron startup, test, or shutdown exceeded 120 seconds\n`)
+        if (processGroup && child.pid) process.kill(-child.pid, 'SIGKILL')
+        else child.kill('SIGKILL')
+      }, 120_000)
+      child.once('error', (error) => {
+        clearTimeout(deadline)
+        reject(error)
+      })
+      child.once('exit', (value) => {
+        clearTimeout(deadline)
+        resolve(value ?? 1)
+      })
     })
     if (code !== 0) failed++
   } finally {
