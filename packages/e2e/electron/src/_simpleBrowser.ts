@@ -33,6 +33,7 @@ export const waitForWebContentsPage = async (page: Page, expectedUrl: string): P
 }
 
 export const show = async (page: Page): Promise<void> => {
+  page.context().setDefaultTimeout(10_000)
   await page.locator('.Workbench').waitFor({ state: 'visible' })
   await page.bringToFront()
   const shortcut = process.platform === 'darwin' ? 'Meta+Shift+P' : 'Control+Shift+P'

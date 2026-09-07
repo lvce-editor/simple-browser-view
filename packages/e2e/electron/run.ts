@@ -19,7 +19,7 @@ for (const file of files) {
     continue
   }
   const profile = await mkdtemp(join(tmpdir(), 'simple-browser-e2e-'))
-  const env = { ...process.env, SIMPLE_BROWSER_TEST_PROFILE: profile }
+  const env = { ...process.env, SIMPLE_BROWSER_TEST_NAME: file, SIMPLE_BROWSER_TEST_PROFILE: profile }
   for (const kind of ['CONFIG', 'DATA', 'CACHE', 'STATE']) env[`XDG_${kind}_HOME`] = join(profile, kind.toLowerCase())
   for (const name of ['lvce', 'lvce-oss']) {
     const config = join(profile, 'config', name)

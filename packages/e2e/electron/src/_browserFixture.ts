@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test'
-import { writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
@@ -66,6 +66,9 @@ export const start = async (
   preferences: Readonly<Record<string, unknown>> = {},
   storage: Readonly<Record<string, string>> = {},
 ): Promise<BrowserFixture> => {
+  const artifactDirectory = join(process.cwd(), '.test-with-playwright', 'artifacts')
+  await mkdir(artifactDirectory, { recursive: true })
+  await context.page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   await reset(context, preferences)
   const requests: string[] = []
   const server = await TestServer.start((request, response) => {
@@ -88,6 +91,7 @@ export const start = async (
     address: browser.locator('.SimpleBrowserHeader input.InputBox'),
     browser,
     close: async (): Promise<void> => {
+      await context.page.context().tracing.stop({ path: join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.zip`) })
       await server.close()
     },
     guest,
