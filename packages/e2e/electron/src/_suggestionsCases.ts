@@ -127,6 +127,7 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
       'simple-browser-search-history': JSON.stringify(['known first', 'known second', 'offline local']),
     },
   )
+  await fixture.guest.route('https://known.example/**', (route) => route.fulfill({ body: '<h1>Typed address</h1>', contentType: 'text/html' }))
   const { electronApp } = fixture
   try {
     if (!cases[scenario]) throw new Error('Unknown browser scenario: ' + scenario)
