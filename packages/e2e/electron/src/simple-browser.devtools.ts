@@ -3,8 +3,6 @@ import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.devtools'
-// TODO enable when the published Electron editor includes the standalone Simple Browser worker with this toolbar button
-export const skip = 1
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   const server = await TestServer.start()

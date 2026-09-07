@@ -2,7 +2,7 @@
   "compilerOptions": {
     "ignoreDeprecations": "6.0",
     "target": "esnext",
-    "lib": ["esnext", "WebWorker"],
+    "lib": ["esnext", "WebWorker", "DOM"],
     "checkJs": true,
     "module": "esnext",
     "types": ["node"],
@@ -19,5 +19,5 @@
     "composite": true,
     "allowImportingTsExtensions": true
   },
-  "include": ["electron/src", "src", "test"]
+  "include": ["electron/src", "src", "test", "electron/run.ts"]
 }

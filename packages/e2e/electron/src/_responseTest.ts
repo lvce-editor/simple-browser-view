@@ -1,8 +1,9 @@
-import type { expect as PlaywrightExpect, Page } from '@playwright/test'
+import type { expect as PlaywrightExpect, Page, ElectronApplication } from '@playwright/test'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
 
 export interface ElectronTestContext {
+  readonly electronApp: ElectronApplication
   readonly expect: typeof PlaywrightExpect
   readonly page: Page
 }

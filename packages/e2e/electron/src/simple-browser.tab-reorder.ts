@@ -4,8 +4,6 @@ import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.tab-reorder'
-// TODO enable when the published Electron editor includes this Simple Browser worker version
-export const skip = 1
 
 const pages: Readonly<Record<string, string>> = {
   '/one.html': '<!doctype html><html><head><title>One</title></head><body><h1>One</h1></body></html>',
@@ -14,7 +12,7 @@ const pages: Readonly<Record<string, string>> = {
 }
 
 const getTabTitles = async (tabs: Locator): Promise<readonly string[]> => {
-  return tabs.locator('.TabTitle').allTextContents()
+  return tabs.locator('.SimpleBrowserTabTitle').allTextContents()
 }
 
 const dragBefore = async (page: Page, source: Locator, target: Locator): Promise<void> => {
@@ -42,7 +40,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   const oneUrl = `${server.url}/one.html`
   const twoUrl = `${server.url}/two.html`
   const threeUrl = `${server.url}/three.html`
-  const tabs = page.locator('.SimpleBrowser .MainTab')
+  const tabs = page.locator('.SimpleBrowser .SimpleBrowserTab')
   const newTabButton = page.getByRole('button', { exact: true, name: 'New Tab' })
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
   try {
@@ -58,7 +56,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
 
     const oneTab = tabs.filter({ hasText: 'One' })
     await dragBefore(page, tabs.filter({ hasText: 'Two' }), oneTab)
-    await expect(oneTab).toHaveAttribute('style', /box-shadow:.*white/)
+    await expect(oneTab).toHaveClass(/SimpleBrowserTabDropBefore/)
     await page.mouse.up()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['Two', 'One', 'Three'])
     await expect(input).toHaveValue(twoUrl)
@@ -79,7 +77,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
 
     // eslint-disable-next-line e2e/no-direct-click -- validates that new tabs still append after a reorder
     await newTabButton.click()
-    await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Two', 'Simple Browser'])
+    await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Two', 'New Tab'])
   } finally {
     await server.close()
   }

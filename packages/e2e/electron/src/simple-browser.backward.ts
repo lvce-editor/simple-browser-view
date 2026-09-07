@@ -3,8 +3,6 @@ import * as NavigationTest from './_navigationTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 
 export const name = 'simple-browser.backward'
-// TODO enable when Electron forwards Simple Browser toolbar clicks to the active view
-export const skip = 1
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   const server = await NavigationTest.startServer()
