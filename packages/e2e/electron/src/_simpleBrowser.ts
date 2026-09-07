@@ -69,8 +69,12 @@ export const show = async (page: Page): Promise<void> => {
 export const setUrl = async (page: Page, url: string): Promise<void> => {
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
   await input.focus()
-  // Let the address bar's deferred focus selection finish before Playwright replaces its text.
-  await input.evaluate(async () => new Promise((resolve) => setTimeout(resolve, 0)))
+  await input.evaluate((element: HTMLInputElement) => element.setSelectionRange(element.value.length, element.value.length))
+  await input.press(process.platform === 'darwin' ? 'Meta+l' : 'Control+l')
+  await page.waitForFunction(() => {
+    const address = document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
+    return document.hasFocus() && document.activeElement === address && address?.selectionStart === 0 && address.selectionEnd === address.value.length
+  })
   await input.fill(url)
   await input.press('Enter')
 }
