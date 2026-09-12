@@ -3,8 +3,6 @@ import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.reload'
-// TODO enable when Electron forwards Simple Browser toolbar clicks to the active view
-export const skip = 1
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   let requestCount = 0

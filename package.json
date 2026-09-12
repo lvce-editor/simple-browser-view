@@ -10,7 +10,7 @@
   "scripts": {
     "build": "node packages/build/src/build.js",
     "build:static": "node packages/build/src/build-static.js",
-    "build:watch": "./packages/build/node_modules/.bin/esbuild --format=esm --bundle --external:node:buffer --external:electron --external:ws --external:node:worker_threads --watch packages/simple-browser-view/src/simpleBrowserViewWorkerMain.ts --outfile=.tmp/dist/dist/simpleBrowserViewWorkerMain.js",
+    "build:watch": "./packages/build/node_modules/.bin/esbuild --format=esm --bundle --external:node:buffer --external:electron --external:ws --external:node:worker_threads --watch=forever packages/simple-browser-view/src/simpleBrowserViewWorkerMain.ts --outfile=.tmp/dist/dist/simpleBrowserViewWorkerMain.js",
     "dev": "node packages/build/src/dev.js",
     "format": "prettier --write .",
     "lint": "eslint . && knip --no-config-hints",

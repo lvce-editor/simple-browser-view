@@ -28,6 +28,7 @@ const CloseTab = await import('../src/parts/CloseTab/CloseTab.ts')
 const Create = await import('../src/parts/Create/Create.ts')
 const ElectronWebContentsView = await import('../src/parts/ElectronWebContentsView/ElectronWebContentsView.ts')
 const ElectronWebContentsViewFunctions = await import('../src/parts/ElectronWebContentsViewFunctions/ElectronWebContentsViewFunctions.ts')
+const HandleTabMouseDown = await import('../src/parts/HandleTabMouseDown/HandleTabMouseDown.ts')
 const NewTab = await import('../src/parts/NewTab/NewTab.ts')
 const SelectTab = await import('../src/parts/SelectTab/SelectTab.ts')
 
@@ -73,6 +74,41 @@ test('switches tabs by hiding the active view and showing the selected view', as
   expect(ElectronWebContentsViewFunctions.hide).toHaveBeenCalledWith(10)
   expect(ElectronWebContentsViewFunctions.show).toHaveBeenCalledWith(20)
   expect(ElectronWebContentsViewFunctions.focus).toHaveBeenCalledWith(20)
+})
+
+test('primary mouse down selects and stages an inactive tab for dragging', async () => {
+  const state = createState()
+
+  const newState = await HandleTabMouseDown.handleTabMouseDown(state, '20', 0)
+
+  expect(newState.browserViewId).toBe(20)
+  expect(newState.draggedBrowserViewId).toBe(20)
+  expect(ElectronWebContentsViewFunctions.hide).toHaveBeenCalledWith(10)
+  expect(ElectronWebContentsViewFunctions.show).toHaveBeenCalledWith(20)
+})
+
+test('primary mouse down stages the already-active tab without changing its view', async () => {
+  const state = createState()
+
+  const newState = await HandleTabMouseDown.handleTabMouseDown(state, '10', 0)
+
+  expect(newState.browserViewId).toBe(10)
+  expect(newState.draggedBrowserViewId).toBe(10)
+  expect(ElectronWebContentsViewFunctions.hide).not.toHaveBeenCalled()
+  expect(ElectronWebContentsViewFunctions.show).not.toHaveBeenCalled()
+})
+
+test('non-primary mouse down does not select or stage a tab', async () => {
+  const state = createState()
+
+  expect(await HandleTabMouseDown.handleTabMouseDown(state, '20', 1)).toBe(state)
+  expect(ElectronWebContentsViewFunctions.hide).not.toHaveBeenCalled()
+})
+
+test.each(['missing', '99'])('invalid mouse down tab %s is ignored', async (browserViewId) => {
+  const state = createState()
+
+  expect(await HandleTabMouseDown.handleTabMouseDown(state, browserViewId, 0)).toBe(state)
 })
 
 test('closes the active tab and selects its neighbor', async () => {

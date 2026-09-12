@@ -3,7 +3,7 @@ import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserStat
 import * as GetSimpleBrowserVirtualDom from '../GetSimpleBrowserVirtualDom/GetSimpleBrowserVirtualDom.ts'
 
 export const renderItems = (oldState: SimpleBrowserState, newState: SimpleBrowserState): readonly any[] => {
-  const { browserViewId, canGoBack, canGoForward, iframeSrc, isLoading, tabs } = newState
+  const { browserViewId, canGoBack, canGoForward, iframeSrc, isLoading, tabDropIndex, tabs } = newState
   const dom: readonly VirtualDomNode[] = GetSimpleBrowserVirtualDom.getSimpleBrowserVirtualDom(
     canGoBack,
     canGoForward,
@@ -11,6 +11,7 @@ export const renderItems = (oldState: SimpleBrowserState, newState: SimpleBrowse
     iframeSrc,
     tabs,
     browserViewId,
+    tabDropIndex,
   )
   return ['Viewlet.setDom2', dom]
 }

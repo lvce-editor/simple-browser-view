@@ -1,9 +1,12 @@
+import type { AddressSelection } from '../GetAddressSelection/GetAddressSelection.ts'
 import type { SimpleBrowserTab } from '../SimpleBrowserTab/SimpleBrowserTab.ts'
 
 export interface SimpleBrowserState {
+  readonly addressSelection?: AddressSelection
   readonly browserViewId: number
   readonly canGoBack: boolean
   readonly canGoForward: boolean
+  readonly draggedBrowserViewId: number
   readonly focus: number
   readonly focused: boolean
   readonly hasSuggestionsOverlay: boolean
@@ -15,6 +18,7 @@ export interface SimpleBrowserState {
   readonly overlayIds: readonly string[]
   readonly shortcuts: readonly any[]
   readonly suggestionsEnabled: boolean
+  readonly tabDropIndex: number
   readonly tabs: readonly SimpleBrowserTab[]
   readonly title: string
   readonly uid: number

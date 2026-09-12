@@ -3,6 +3,8 @@ import * as RenderEventListeners from '../src/parts/RenderEventListeners/RenderE
 
 test('provides tab lifecycle event parameters', () => {
   expect(RenderEventListeners.renderEventListeners()).toEqual([
+    { name: 'handleAddressFocus', params: ['handleAddressFocus', 'event.target.value'] },
+    { name: 'handleAddressBlur', params: ['handleAddressBlur'] },
     {
       name: 'handleClickCloseTab',
       params: ['handleClickCloseTab', 'event.target.dataset.id'],
@@ -13,7 +15,48 @@ test('provides tab lifecycle event parameters', () => {
     },
     {
       name: 'handleClickTab',
-      params: ['handleClickTab', 'event.target.dataset.id'],
+      params: ['handleClickTab', 'event.currentTarget.dataset.id', 'event.button'],
+    },
+    {
+      name: 'handleTabDragOver',
+      params: [
+        'handleTabDragOver',
+        'event.currentTarget.dataset.index',
+        'event.currentTarget.offsetLeft',
+        'event.currentTarget.offsetWidth',
+        'event.currentTarget.parentElement.scrollLeft',
+        'event.clientX',
+      ],
+      preventDefault: true,
+      stopPropagation: true,
+    },
+    {
+      name: 'handleTabsDragOver',
+      params: ['handleTabsDragOver'],
+      preventDefault: true,
+      stopPropagation: true,
+    },
+    {
+      dragEffect: 'copyMove',
+      name: 'handleDragStart',
+      params: ['handleDragStart'],
+    },
+    {
+      name: 'handleDragEnd',
+      params: ['handleDragEnd'],
+    },
+    {
+      name: 'handleTabMouseUp',
+      params: ['handleTabMouseUp'],
+    },
+    {
+      name: 'handleDragLeave',
+      params: ['handleDragLeave'],
+    },
+    {
+      name: 'handleDrop',
+      params: ['handleDrop'],
+      preventDefault: true,
     },
   ])
 })
