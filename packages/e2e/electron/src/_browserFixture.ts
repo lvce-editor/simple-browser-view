@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test'
+import type { ElectronApplication, Locator, Page } from '@playwright/test'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { ElectronTestContext } from './_responseTest.ts'
@@ -32,16 +32,22 @@ export const command = async (page: Page, label: string): Promise<void> => {
   await picker.waitFor({ state: 'hidden' })
 }
 
-export const settings = async (values: Readonly<Record<string, unknown>>): Promise<void> => {
+export const settings = async (electronApp: ElectronApplication, values: Readonly<Record<string, unknown>>): Promise<void> => {
   const profile = process.env.SIMPLE_BROWSER_TEST_PROFILE
   if (!profile) throw new Error('Run Electron tests using npm run e2e:electron to isolate configuration')
+  const configHome = await electronApp.evaluate(() => process.env.XDG_CONFIG_HOME)
+  if (!configHome || configHome === process.env.XDG_CONFIG_HOME) {
+    throw new Error('Expected the test launcher to isolate the Electron configuration directory')
+  }
   for (const name of ['lvce', 'lvce-oss']) {
-    await writeFile(join(profile, 'config', name, 'settings.json'), JSON.stringify(values))
+    const directory = join(configHome, name)
+    await mkdir(directory, { recursive: true })
+    await writeFile(join(directory, 'settings.json'), JSON.stringify(values))
   }
 }
 
 export const reset = async ({ electronApp, page }: ElectronTestContext, preferences: Readonly<Record<string, unknown>> = {}): Promise<void> => {
-  await settings(preferences)
+  await settings(electronApp, preferences)
   await electronApp.evaluate(({ BrowserWindow, WebContentsView }) => {
     const window = BrowserWindow.getAllWindows()[0]
     window.webContents.closeDevTools()
