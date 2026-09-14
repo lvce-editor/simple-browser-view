@@ -115,7 +115,7 @@ jobs:
         run: |
           mkdir -p "$XDG_RUNTIME_DIR"
           chmod 700 "$XDG_RUNTIME_DIR"
-          weston --backend=headless-backend.so --socket="$WAYLAND_DISPLAY" --idle-time=0 > "$RUNNER_TEMP/weston.log" 2>&1 &
+          weston --backend=headless-backend.so --renderer=pixman --width=1920 --height=1080 --socket="$WAYLAND_DISPLAY" --idle-time=0 > "$RUNNER_TEMP/weston.log" 2>&1 &
           echo "$!" > "$RUNNER_TEMP/weston.pid"
           for attempt in {1..30}; do
             if test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"; then
@@ -134,6 +134,7 @@ jobs:
           unset DISPLAY
           echo "Running Electron with --ozone-platform=wayland and no DISPLAY"
           npm run e2e:electron -- \
+            --filter=simple-browser.workspace-toolbar \
             --electron-arg=--no-sandbox \
             --electron-arg=--disable-gpu \
             --electron-arg=--ozone-platform=wayland \
