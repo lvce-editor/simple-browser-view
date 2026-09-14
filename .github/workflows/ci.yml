@@ -106,7 +106,7 @@ jobs:
     timeout-minutes: 30
     env:
       WAYLAND_DISPLAY: wayland-1
-      XDG_RUNTIME_DIR: ${{ runner.temp }}/wayland
+      XDG_RUNTIME_DIR: /tmp/lvce-wayland-${{ github.run_id }}
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v6
