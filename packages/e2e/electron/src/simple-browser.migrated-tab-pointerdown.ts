@@ -4,7 +4,6 @@ import * as Fixture from './_browserFixture.ts'
 export const name = 'simple-browser.migrated-tab-pointerdown'
 
 export const test = async ({ page, expect, electronApp }: ElectronTestContext): Promise<void> => {
-  const { expect, page } = context
   const fixture = await Fixture.start({ page, expect, electronApp }, { 'simpleBrowser.tabs.enabled': true })
   try {
     await Fixture.pressControl(page.getByRole('button', { exact: true, name: 'New Tab' }))

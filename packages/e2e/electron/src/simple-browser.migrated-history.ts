@@ -6,7 +6,6 @@ const nonZeroPixelWidthRegex = /^[1-9]\d*(?:\.\d+)?px$/
 export const name = 'simple-browser.migrated-history'
 
 export const test = async ({ page, expect, electronApp }: ElectronTestContext): Promise<void> => {
-  const { expect, page } = context
   await Fixture.reset({ page, expect, electronApp })
 
   await page.evaluate(

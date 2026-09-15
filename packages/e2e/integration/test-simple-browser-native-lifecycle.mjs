@@ -81,6 +81,7 @@ try {
   await page.keyboard.press('Control+Alt+1')
   const address = page.locator('[name="simple-browser-address"]')
   await expect(address).toBeVisible()
+  await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Example')
   const ownership = await app.evaluate(
     ({ BrowserWindow }, [originalId, otherId]) => ({
       original: BrowserWindow.fromId(originalId)

@@ -4,7 +4,6 @@ import * as Fixture from './_browserFixture.ts'
 export const name = 'simple-browser.migrated-toolbar-menu'
 
 export const test = async ({ page, expect, electronApp }: ElectronTestContext): Promise<void> => {
-  const { expect, page } = context
   const fixture = await Fixture.start({ page, expect, electronApp }, { 'simpleBrowser.tabs.enabled': true })
   try {
     const menuButton = page.locator('.SimpleBrowserMenuButton')
