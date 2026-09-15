@@ -53,7 +53,18 @@ jobs:
         run: node packages/main-process/node_modules/electron/install.js
       - name: address
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
-        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs
+        shell: bash
+        run: |
+          failures=0
+          for attempt in $(seq 1 20); do
+            if xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs; then
+              echo "ADDRESS_ATTEMPT $attempt PASS"
+            else
+              echo "ADDRESS_ATTEMPT $attempt FAIL"
+              failures=$((failures + 1))
+            fi
+          done
+          test "$failures" -eq 0
       - name: restore
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         shell: bash
