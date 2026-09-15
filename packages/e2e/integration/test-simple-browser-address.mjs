@@ -1,4 +1,3 @@
-import { instrumentRenderer } from './trace-renderer.mjs'
 import { fixtureUrl, root } from './fixture.mjs'
 import assert from 'node:assert/strict'
 const { parseKeyBindingString } = await import(
@@ -54,7 +53,7 @@ await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
 try {
-  await writeFile(rendererPath, instrumentRenderer(rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl)))
+  await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
   delete env.ELECTRON_RUN_AS_NODE
   for (const key of ['CONFIG', 'DATA', 'STATE', 'CACHE']) env[`XDG_${key}_HOME`] = join(profile, key.toLowerCase())
@@ -458,12 +457,6 @@ try {
   console.log('Closed tabs reopen from address-bar and native web-page shortcuts')
   console.log('History suggestions preserve the toolbar and typing; visible and background new-tab pages follow the browser theme')
 } finally {
-  if (app) {
-    const traceDirectory = new URL('../.test-with-playwright/artifacts/address/', import.meta.url)
-    await mkdir(traceDirectory, { recursive: true })
-    const trace = await (await app.firstWindow()).evaluate(() => globalThis.__browserTrace).catch((error) => ({ error: String(error) }))
-    await writeFile(new URL(`attempt-${process.env.TRACE_ATTEMPT || 'local'}.json`, traceDirectory), JSON.stringify(trace))
-  }
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await new Promise((resolveClose) => server.close(resolveClose))

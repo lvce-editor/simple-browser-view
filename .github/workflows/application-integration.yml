@@ -36,6 +36,12 @@ jobs:
       - name: Install application fixture
         working-directory: .fixtures/lvce-editor
         run: node packages/build/src/parts/InstallDependencies/InstallDependencies.ts
+      - name: Build this Simple Browser revision
+        run: |
+          npm ci
+          npm run build
+      - name: Install this Simple Browser revision into the fixture
+        run: node packages/e2e/integration/install-fixture.mjs
       - name: Install Chromium
         id: chromium
         working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
@@ -53,32 +59,10 @@ jobs:
         run: node packages/main-process/node_modules/electron/install.js
       - name: address
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
-        shell: bash
-        run: |
-          failures=0
-          for attempt in $(seq 1 20); do
-            if TRACE_ATTEMPT="$attempt" xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs; then
-              echo "ADDRESS_ATTEMPT $attempt PASS"
-            else
-              echo "ADDRESS_ATTEMPT $attempt FAIL"
-              failures=$((failures + 1))
-            fi
-          done
-          test "$failures" -eq 0
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs
       - name: restore
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
-        shell: bash
-        run: |
-          failures=0
-          for attempt in $(seq 1 20); do
-            if xvfb-run -a node packages/e2e/integration/test-simple-browser-restore.mjs; then
-              echo "RESTORE_ATTEMPT $attempt PASS"
-            else
-              echo "RESTORE_ATTEMPT $attempt FAIL"
-              failures=$((failures + 1))
-            fi
-          done
-          test "$failures" -eq 0
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-restore.mjs
       - name: native-lifecycle
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-native-lifecycle.mjs
@@ -88,10 +72,3 @@ jobs:
       - name: workspace
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs
-      - name: Upload address race diagnostics
-        if: ${{ always() && runner.os == 'Linux' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: address-race-diagnostics
-          path: packages/e2e/.test-with-playwright/artifacts/address
-          if-no-files-found: error
