@@ -107,10 +107,10 @@ jobs:
       - name: npm ci
         run: npm ci
         if: steps.npm-cache.outputs.cache-hit != 'true'
-      - name: Install Weston
+      - name: Install Weston and PulseAudio
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends --yes wayland-utils weston
+          sudo apt-get install --no-install-recommends --yes wayland-utils weston pulseaudio
       - name: Start Weston
         run: |
           mkdir -p "$XDG_RUNTIME_DIR"
@@ -128,10 +128,12 @@ jobs:
             exit 1
           fi
           wayland-info > "$RUNNER_TEMP/wayland-info.log"
+          pulseaudio --start --exit-idle-time=-1
       - name: Wayland Electron e2e
         working-directory: ./packages/e2e
         env:
           DEBUG: pw:browser
+          RUN_AUDIO_INDICATOR_E2E: '1'
         run: |
           set -o pipefail
           unset DISPLAY
@@ -140,6 +142,7 @@ jobs:
             --electron-arg=--no-sandbox \
             --electron-arg=--disable-gpu \
             --electron-arg=--ozone-platform=wayland \
+            --electron-arg=--alsa-output-device=pulse \
             --electron-arg=--ozone-platform-hint=wayland \
             --electron-env=WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
             --electron-env=WAYLAND_DEBUG=1 2>&1 | tee "$RUNNER_TEMP/wayland-electron.log"
@@ -154,9 +157,10 @@ jobs:
             ${{ runner.temp }}/wayland-electron.log
             packages/e2e/.test-with-playwright/artifacts
           if-no-files-found: ignore
-      - name: Stop Weston
+      - name: Stop Weston and PulseAudio
         if: ${{ always() }}
         run: |
+          pulseaudio --kill 2>/dev/null || true
           if test -f "$RUNNER_TEMP/weston.pid"; then
             kill "$(cat "$RUNNER_TEMP/weston.pid")" 2>/dev/null || true
           fi
