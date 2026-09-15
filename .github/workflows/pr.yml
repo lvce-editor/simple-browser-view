@@ -1,7 +1,7 @@
 name: PR
 
 env:
-  LVCE_ELECTRON_VERSION: v0.115.12
+  LVCE_ELECTRON_VERSION: v0.115.14
 
 on:
   pull_request:
@@ -83,3 +83,87 @@ jobs:
         run: npm run measure
         env:
           PLAYWRIGHT_BROWSERS_PATH: 0
+
+  wayland:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      WAYLAND_DISPLAY: wayland-1
+      XDG_RUNTIME_DIR: /tmp/lvce-wayland-${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+      - name: Compute node modules cache key
+        id: nodeModulesCacheKey
+        run: echo "value=$(node packages/build/src/computeNodeModulesCacheKey.js)" >> $GITHUB_OUTPUT
+        shell: bash
+      - uses: actions/cache@v6
+        id: npm-cache
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-cacheNodeModules-${{ steps.nodeModulesCacheKey.outputs.value }}
+      - name: npm ci
+        run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+      - name: Install Weston and PulseAudio
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends --yes wayland-utils weston pulseaudio
+      - name: Start Weston
+        run: |
+          mkdir -p "$XDG_RUNTIME_DIR"
+          chmod 700 "$XDG_RUNTIME_DIR"
+          # Provide a virtual input seat for native Electron gesture tests.
+          # Electron connects through Wayland with DISPLAY unset.
+          setsid xvfb-run -a -s "-screen 0 1920x1080x24" weston --backend=x11-backend.so --renderer=pixman --width=1920 --height=1080 --socket="$WAYLAND_DISPLAY" --idle-time=0 > "$RUNNER_TEMP/weston.log" 2>&1 &
+          echo "$!" > "$RUNNER_TEMP/weston.pid"
+          for attempt in {1..30}; do
+            if test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"; then
+              break
+            fi
+            sleep 1
+          done
+          if ! test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"; then
+            cat "$RUNNER_TEMP/weston.log"
+            exit 1
+          fi
+          wayland-info > "$RUNNER_TEMP/wayland-info.log"
+          pulseaudio --start --exit-idle-time=-1
+      - name: Wayland Electron e2e
+        working-directory: ./packages/e2e
+        env:
+          DEBUG: pw:browser
+          RUN_AUDIO_INDICATOR_E2E: '1'
+        run: |
+          set -o pipefail
+          unset DISPLAY
+          echo "Running Electron with --ozone-platform=wayland and no DISPLAY"
+          npm run e2e:electron -- \
+            --electron-arg=--no-sandbox \
+            --electron-arg=--disable-gpu \
+            --electron-arg=--ozone-platform=wayland \
+            --electron-arg=--alsa-output-device=pulse \
+            --electron-arg=--ozone-platform-hint=wayland \
+            --electron-env=WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
+            --electron-env=WAYLAND_DEBUG=1 2>&1 | tee "$RUNNER_TEMP/wayland-electron.log"
+      - name: Upload Wayland logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: simple-browser-wayland-logs
+          include-hidden-files: true
+          path: |
+            ${{ runner.temp }}/weston.log
+            ${{ runner.temp }}/wayland-info.log
+            ${{ runner.temp }}/wayland-electron.log
+            packages/e2e/.test-with-playwright/artifacts
+          if-no-files-found: ignore
+      - name: Stop Weston and PulseAudio
+        if: ${{ always() }}
+        run: |
+          pulseaudio --kill 2>/dev/null || true
+          if test -f "$RUNNER_TEMP/weston.pid"; then
+            kill -- "-$(cat "$RUNNER_TEMP/weston.pid")" 2>/dev/null || true
+          fi
