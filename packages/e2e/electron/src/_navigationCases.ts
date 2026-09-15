@@ -11,7 +11,10 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
       target.sendInputEvent({ keyCode: 'L', modifiers: ['control'], type: 'keyUp' })
     }, guest.url())
     await expect(address).toBeFocused()
-    expect(await address.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd])).toEqual([0, `${server.url}/one`.length])
+    // Native focus and the asynchronous address-selection command can complete separately.
+    await expect
+      .poll(() => address.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd]))
+      .toEqual([0, `${server.url}/one`.length])
     await expect(browser).toBeAttached()
   },
   'control-click': async ({ address, browser, electronApp, expect, guest, page, server, tabs }): Promise<void> => {
