@@ -3,7 +3,7 @@ import * as Fixture from './_browserFixture.ts'
 const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> = {
   favicon: async ({ expect, tabs }): Promise<void> => {
     await expect(tabs.first().locator('img.SimpleBrowserTabFavicon')).toBeVisible()
-    await expect(tabs.first().locator('img.SimpleBrowserTabFavicon')).toHaveAttribute('src', /^data:image\/svg\+xml/)
+    await expect(tabs.first().locator('img.SimpleBrowserTabFavicon')).toHaveAttribute('src', /^blob:/)
     expect(
       await tabs
         .first()
