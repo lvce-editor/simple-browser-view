@@ -25,6 +25,8 @@ const dragTab = async (page: Page, source: Locator, target: Locator, side: 'befo
   await page.mouse.down()
   await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 10, sourceBox.y + sourceBox.height / 2, { steps: 5 })
   await page.mouse.move(targetBox.x + (side === 'before' ? 2 : targetBox.width - 2), targetBox.y + targetBox.height / 2, { steps: 10 })
+  // Chromium starts native dragging during the first move; send a dragover at the final target.
+  await page.mouse.move(targetBox.x + (side === 'before' ? 2 : targetBox.width - 2), targetBox.y + targetBox.height / 2)
 }
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
