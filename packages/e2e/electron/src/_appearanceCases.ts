@@ -31,6 +31,8 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     expect(await guest.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches)).toBe(siteTheme)
   },
   'tab-hover': async ({ browser, expect, page, tabs }): Promise<void> => {
+    await expect(tabs.first()).toHaveAttribute('aria-label', 'One')
+    await expect(browser.locator('.SimpleBrowserHeader .MaskIconRefresh')).toBeVisible()
     await tabs.first().hover()
     await expect(browser.locator('.SimpleBrowserTabHover')).toContainText('One')
     await Fixture.toggle(page)
