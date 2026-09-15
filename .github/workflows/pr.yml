@@ -79,6 +79,10 @@ jobs:
           name: simple-browser-electron-traces
           path: packages/e2e/.test-with-playwright/artifacts
           if-no-files-found: ignore
+      - name: Electron tab reordering
+        if: matrix.os == 'ubuntu-24.04'
+        working-directory: ./packages/e2e
+        run: xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder
       - name: measure
         run: npm run measure
         env:
