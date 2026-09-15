@@ -69,49 +69,67 @@ export const start = async (
   const artifactDirectory = join(process.cwd(), '.test-with-playwright', 'artifacts')
   await mkdir(artifactDirectory, { recursive: true })
   await context.page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
-  await reset(context, preferences)
-  const requests: string[] = []
-  const server = await TestServer.start((request, response) => {
-    const path = request.url || '/'
-    requests.push(path)
-    if (path === '/picture.png') {
-      response.writeHead(200, { 'content-type': 'image/png' })
-      response.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+afooAAAAASUVORK5CYII=', 'base64'))
-      return
-    }
-    const title = ['/two', '/three'].includes(path.split('?', 1)[0]) ? { '/three': 'Three', '/two': 'Two' }[path.split('?', 1)[0]] : 'One'
-    response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
-    response.end(
-      `<!doctype html><html><head><title>${title}</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='red'/%3E%3C/svg%3E"></head><body style="margin:20px"><h1>${title}</h1><img id="picture" src="/picture.png" width="24" height="24"><input id="draft" aria-label="Draft"><textarea aria-label="Notes"></textarea><a href="/two">Next page</a><a href="/two" target="_blank">Background link</a><a href="#section">Section link</a><button id="push" onclick="history.pushState({},'', '/pushed')">Push state</button><div style="height:2000px"></div><h2 id="section">Section</h2><script>window.documentToken=crypto.randomUUID()</script></body></html>`,
-    )
-  })
-  await context.page.evaluate((values) => {
-    for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
-  }, storage)
-  await SimpleBrowser.show(context.page)
-  const guest = await SimpleBrowser.openUrl(context.page, `${server.url}/one`)
-  const browser = context.page.locator('.SimpleBrowser').last()
-  return {
-    ...context,
-    address: browser.locator('.SimpleBrowserHeader input.InputBox'),
-    browser,
-    close: async (): Promise<void> => {
+  let server: TestServer.TestServer | undefined
+  const errors: string[] = []
+  const onPageError = (error: Error): void => {
+    errors.push(String(error))
+  }
+  context.page.on('pageerror', onPageError)
+  const close = async (): Promise<void> => {
+    try {
+      await writeFile(join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.errors.json`), JSON.stringify(errors))
       await context.page.context().tracing.stop({ path: join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.zip`) })
-      await server.close()
-    },
-    guest,
-    newTab: async (path = '/two'): Promise<Page> => {
-      const count = await browser.getByRole('tab').count()
-      await pressControl(browser.getByRole('button', { exact: true, name: 'New Tab' }))
-      await context.expect(browser.getByRole('tab')).toHaveCount(count + 1)
-      await context.expect(browser.locator('.SimpleBrowserHeader input.InputBox')).toBeFocused()
-      await context.expect(browser.locator('.SimpleBrowserHeader input.InputBox')).toHaveValue('')
-      return SimpleBrowser.openUrl(context.page, `${server.url}${path}`)
-    },
-    requests,
-    server,
-    suggestions: browser.locator('.SimpleBrowserSuggestion'),
-    tabs: browser.getByRole('tab'),
+    } finally {
+      context.page.off('pageerror', onPageError)
+      await server?.close()
+    }
+  }
+  try {
+    await reset(context, preferences)
+    const requests: string[] = []
+    server = await TestServer.start((request, response) => {
+      const path = request.url || '/'
+      requests.push(path)
+      if (path === '/picture.png') {
+        response.writeHead(200, { 'content-type': 'image/png' })
+        response.end(Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+afooAAAAASUVORK5CYII=', 'base64'))
+        return
+      }
+      const title = ['/two', '/three'].includes(path.split('?', 1)[0]) ? { '/three': 'Three', '/two': 'Two' }[path.split('?', 1)[0]] : 'One'
+      response.writeHead(200, { 'content-type': 'text/html; charset=utf-8' })
+      response.end(
+        `<!doctype html><html><head><title>${title}</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16'%3E%3Crect width='16' height='16' fill='red'/%3E%3C/svg%3E"></head><body style="margin:20px"><h1>${title}</h1><img id="picture" src="/picture.png" width="24" height="24"><input id="draft" aria-label="Draft"><textarea aria-label="Notes"></textarea><a href="/two">Next page</a><a href="/two" target="_blank">Background link</a><a href="#section">Section link</a><button id="push" onclick="history.pushState({},'', '/pushed')">Push state</button><div style="height:2000px"></div><h2 id="section">Section</h2><script>window.documentToken=crypto.randomUUID()</script></body></html>`,
+      )
+    })
+    await context.page.evaluate((values) => {
+      for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
+    }, storage)
+    await SimpleBrowser.show(context.page)
+    const activeServer = server
+    const guest = await SimpleBrowser.openUrl(context.page, `${server.url}/one`)
+    const browser = context.page.locator('.SimpleBrowser').last()
+    return {
+      ...context,
+      address: browser.locator('.SimpleBrowserHeader input.InputBox'),
+      browser,
+      close,
+      guest,
+      newTab: async (path = '/two'): Promise<Page> => {
+        const count = await browser.getByRole('tab').count()
+        await pressControl(browser.getByRole('button', { exact: true, name: 'New Tab' }))
+        await context.expect(browser.getByRole('tab')).toHaveCount(count + 1)
+        await context.expect(browser.locator('.SimpleBrowserHeader input.InputBox')).toBeFocused()
+        await context.expect(browser.locator('.SimpleBrowserHeader input.InputBox')).toHaveValue('')
+        return SimpleBrowser.openUrl(context.page, `${activeServer.url}${path}`)
+      },
+      requests,
+      server,
+      suggestions: browser.locator('.SimpleBrowserSuggestion'),
+      tabs: browser.getByRole('tab'),
+    }
+  } catch (error) {
+    await close()
+    throw error
   }
 }
 

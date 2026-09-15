@@ -130,17 +130,19 @@ jobs:
           wayland-info > "$RUNNER_TEMP/wayland-info.log"
       - name: Wayland Electron e2e
         working-directory: ./packages/e2e
+        env:
+          DEBUG: pw:browser
         run: |
+          set -o pipefail
           unset DISPLAY
           echo "Running Electron with --ozone-platform=wayland and no DISPLAY"
           npm run e2e:electron -- \
-            --filter=simple-browser.workspace-toolbar \
             --electron-arg=--no-sandbox \
             --electron-arg=--disable-gpu \
             --electron-arg=--ozone-platform=wayland \
             --electron-arg=--ozone-platform-hint=wayland \
             --electron-env=WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
-            --electron-env=WAYLAND_DEBUG=1
+            --electron-env=WAYLAND_DEBUG=1 2>&1 | tee "$RUNNER_TEMP/wayland-electron.log"
       - name: Upload Wayland logs
         if: ${{ always() }}
         uses: actions/upload-artifact@v4
@@ -149,6 +151,8 @@ jobs:
           path: |
             ${{ runner.temp }}/weston.log
             ${{ runner.temp }}/wayland-info.log
+            ${{ runner.temp }}/wayland-electron.log
+            packages/e2e/.test-with-playwright/artifacts
           if-no-files-found: ignore
       - name: Stop Weston
         if: ${{ always() }}
