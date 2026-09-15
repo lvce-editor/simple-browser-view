@@ -1,0 +1,74 @@
+name: Application integration
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  integration:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-2025]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      LVCE_SOURCE_ROOT: ${{ github.workspace }}/.fixtures/lvce-editor
+      PLAYWRIGHT_BROWSERS_PATH: 0
+    steps:
+      - uses: actions/checkout@v7
+      - name: Checkout application fixture
+        uses: actions/checkout@v7
+        with:
+          repository: lvce-editor/lvce-editor
+          ref: 383ac665061f80192046eb1ba290314d6a3635c3
+          path: .fixtures/lvce-editor
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .fixtures/lvce-editor/.nvmrc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v6
+        with:
+          path: .fixtures/lvce-editor/**/node_modules
+          key: ${{ runner.os }}-browser-integration-${{ hashFiles('.fixtures/lvce-editor/**/package-lock.json') }}
+      - name: Install application fixture
+        working-directory: .fixtures/lvce-editor
+        run: node packages/build/src/parts/InstallDependencies/InstallDependencies.ts
+      - name: Build this Simple Browser revision
+        run: |
+          npm ci
+          npm run build
+      - name: Install this Simple Browser revision into the fixture
+        run: node packages/e2e/integration/install-fixture.mjs
+      - name: Install Chromium
+        id: chromium
+        working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
+        run: npx playwright install chromium
+      - name: Tab overflow
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
+        run: node packages/e2e/integration/test-simple-browser-tabs.mjs
+      - name: New tab suggestions
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
+        run: node packages/e2e/integration/test-simple-browser-new-tab.mjs
+      - name: Install Electron
+        id: electron
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        working-directory: .fixtures/lvce-editor
+        run: node packages/main-process/node_modules/electron/install.js
+      - name: address
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs
+      - name: restore
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-restore.mjs
+      - name: native-lifecycle
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-native-lifecycle.mjs
+      - name: workflows
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workflows.mjs
+      - name: workspace
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs
