@@ -57,7 +57,9 @@ try {
   }
   app = await _electron.launch(launchOptions)
   await app.evaluate(({ session }) => {
-    session.fromPartition('persist:browserView').protocol.handle('https', () => new Response('<title>Example</title>'))
+    session
+      .fromPartition('persist:browserView')
+      .protocol.handle('https', () => new Response('<title>Example</title>', { headers: { 'Content-Type': 'text/html' } }))
   })
   let page = await app.firstWindow()
   await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()

@@ -37,28 +37,43 @@ jobs:
         working-directory: .fixtures/lvce-editor
         run: node packages/build/src/parts/InstallDependencies/InstallDependencies.ts
       - name: Install Chromium
+        id: chromium
         working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
         run: npx playwright install chromium
       - name: Tab overflow
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         run: node packages/e2e/integration/test-simple-browser-tabs.mjs
       - name: New tab suggestions
+        if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         run: node packages/e2e/integration/test-simple-browser-new-tab.mjs
       - name: Install Electron
-        if: runner.os == 'Linux'
+        id: electron
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         working-directory: .fixtures/lvce-editor
         run: node packages/main-process/node_modules/electron/install.js
       - name: address
-        if: runner.os == 'Linux'
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs
       - name: restore
-        if: runner.os == 'Linux'
-        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-restore.mjs
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        shell: bash
+        run: |
+          failures=0
+          for attempt in $(seq 1 20); do
+            if xvfb-run -a node packages/e2e/integration/test-simple-browser-restore.mjs; then
+              echo "RESTORE_ATTEMPT $attempt PASS"
+            else
+              echo "RESTORE_ATTEMPT $attempt FAIL"
+              failures=$((failures + 1))
+            fi
+          done
+          test "$failures" -eq 0
       - name: native-lifecycle
-        if: runner.os == 'Linux'
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-native-lifecycle.mjs
       - name: workflows
-        if: runner.os == 'Linux'
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workflows.mjs
       - name: workspace
-        if: runner.os == 'Linux'
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs
