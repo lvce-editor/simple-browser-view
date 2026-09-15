@@ -15,7 +15,24 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     await electronApp.evaluate(({ clipboard }) => clipboard.clear())
     await openMenu('#picture')
     await choose('Copy Image')
-    await expect.poll(() => electronApp.evaluate(({ clipboard }) => clipboard.readImage().isEmpty())).toBe(false)
+    await expect
+      .poll(() =>
+        electronApp.evaluate(async ({ clipboard }) => {
+          const api = clipboard as unknown as {
+            read: () => Promise<readonly { types: readonly string[]; getType: (type: string) => Promise<Blob> }[]>
+          }
+          const items = await api.read()
+          for (const item of items) {
+            const type = item.types.find((value) => value.startsWith('image/'))
+            if (type) {
+              const blob = await item.getType(type)
+              if (blob.size > 0) return true
+            }
+          }
+          return false
+        }),
+      )
+      .toBe(true)
   },
   'copy-image-address': async ({ choose, electronApp, expect, openMenu, server }): Promise<void> => {
     await openMenu('#picture')
