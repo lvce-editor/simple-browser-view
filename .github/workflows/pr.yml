@@ -115,7 +115,9 @@ jobs:
         run: |
           mkdir -p "$XDG_RUNTIME_DIR"
           chmod 700 "$XDG_RUNTIME_DIR"
-          weston --backend=headless-backend.so --renderer=pixman --width=1920 --height=1080 --socket="$WAYLAND_DISPLAY" --idle-time=0 > "$RUNNER_TEMP/weston.log" 2>&1 &
+          # Provide a virtual input seat for native Electron gesture tests.
+          # Electron connects through Wayland with DISPLAY unset.
+          setsid xvfb-run -a -s "-screen 0 1920x1080x24" weston --backend=x11-backend.so --renderer=pixman --width=1920 --height=1080 --socket="$WAYLAND_DISPLAY" --idle-time=0 > "$RUNNER_TEMP/weston.log" 2>&1 &
           echo "$!" > "$RUNNER_TEMP/weston.pid"
           for attempt in {1..30}; do
             if test -S "$XDG_RUNTIME_DIR/$WAYLAND_DISPLAY"; then
@@ -162,5 +164,5 @@ jobs:
         run: |
           pulseaudio --kill 2>/dev/null || true
           if test -f "$RUNNER_TEMP/weston.pid"; then
-            kill "$(cat "$RUNNER_TEMP/weston.pid")" 2>/dev/null || true
+            kill -- "-$(cat "$RUNNER_TEMP/weston.pid")" 2>/dev/null || true
           fi
