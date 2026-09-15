@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: lvce-editor/lvce-editor
-          ref: 383ac665061f80192046eb1ba290314d6a3635c3
+          ref: efa97d496a4240237fa118c4046f6e62f890d3b5
           path: .fixtures/lvce-editor
       - uses: actions/setup-node@v6
         with:
@@ -72,3 +72,6 @@ jobs:
       - name: workspace
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs
+      - name: History preview tab
+        if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
+        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-history.mjs
