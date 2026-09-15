@@ -71,4 +71,15 @@ jobs:
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workflows.mjs
       - name: workspace
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
-        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs
+        run: |
+          failed=0
+          for attempt in $(seq 1 20); do
+            echo "WORKSPACE_ATTEMPT=$attempt"
+            if xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs; then
+              echo "WORKSPACE_PASS=$attempt"
+            else
+              echo "WORKSPACE_FAIL=$attempt"
+              failed=1
+            fi
+          done
+          exit "$failed"
