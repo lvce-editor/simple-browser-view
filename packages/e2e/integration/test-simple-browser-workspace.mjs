@@ -18,6 +18,12 @@ await mkdir(join(profile, 'config/lvce-oss'), { recursive: true })
 await writeFile(join(profile, 'config/lvce-oss/settings.json'), JSON.stringify({ 'simpleBrowser.suggestions': true }))
 const rendererPath = join(root, 'packages/renderer-worker/node_modules/@lvce-editor/renderer-process/dist/rendererProcessMain.js')
 const rendererSource = await readFile(rendererPath, 'utf8')
+const captureMarker = 'const setElementProperty = (viewletId, name, key, value) => {'
+assert.equal(rendererSource.split(captureMarker).length, 2)
+const capturedRendererSource = rendererSource.replace(captureMarker, captureMarker + `
+  if (name === 'simple-browser-address') (globalThis.workspaceAddressEvents ||= []).push({ time: Date.now(), type: 'renderer-property', viewletId, key, value });
+`)
+
 const bundleUrl = '/packages/renderer-worker/dist/browserWorkspaceTestMain.js'
 await build({
   entryPoints: [join(root, 'packages/renderer-worker/src/rendererWorkerMain.ts')],
@@ -44,7 +50,7 @@ await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
 try {
-  await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
+  await writeFile(rendererPath, capturedRendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
   delete env.ELECTRON_RUN_AS_NODE
   for (const key of ['CONFIG', 'DATA', 'STATE', 'CACHE']) env[`XDG_${key}_HOME`] = join(profile, key.toLowerCase())
@@ -56,7 +62,13 @@ try {
     timeout: 60000,
   }
   app = await _electron.launch(launchOptions)
-  await app.evaluate(({ session, net }) => {
+  await app.evaluate(({ app: electronApp, session, net }) => {
+    globalThis.workspaceNativeEvents = []
+    electronApp.on('web-contents-created', (_event, contents) => {
+      for (const type of ['did-start-navigation', 'did-navigate', 'did-finish-load', 'focus', 'blur']) {
+        contents.on(type, (_event, url) => globalThis.workspaceNativeEvents.push({ time: Date.now(), type, id: contents.id, url: typeof url === 'string' ? url : contents.getURL() }))
+      }
+    })
     globalThis.browserSuggestionQueries = []
     globalThis.completedBrowserSuggestionQueries = []
     session.defaultSession.protocol.handle('https', async (request) => {
@@ -73,6 +85,14 @@ try {
     })
   })
   const page = await app.firstWindow()
+  await page.evaluate(() => {
+    globalThis.workspaceAddressEvents ||= []
+    for (const type of ['focus', 'blur', 'input', 'keydown', 'keyup']) {
+      document.addEventListener(type, (event) => {
+        if (event.target.name === 'simple-browser-address') globalThis.workspaceAddressEvents.push({ time: Date.now(), type, value: event.target.value, key: event.key })
+      }, true)
+    }
+  })
   page.setDefaultTimeout(15000)
   page.on('console', (message) => {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
@@ -657,6 +677,15 @@ try {
       profile,
     }),
   )
+} catch (error) {
+  if (app) {
+    const diagnosticPage = await app.firstWindow()
+    console.log('WORKSPACE_DIAGNOSTIC', JSON.stringify({
+      renderer: await diagnosticPage.evaluate(() => ({ events: globalThis.workspaceAddressEvents, address: document.querySelector('[name="simple-browser-address"]')?.value, tabs: [...document.querySelectorAll('.SimpleBrowserTab')].map((tab) => tab.getAttribute('aria-label')) })),
+      native: await app.evaluate(({ webContents }) => ({ events: globalThis.workspaceNativeEvents, pages: webContents.getAllWebContents().map((contents) => ({ id: contents.id, url: contents.getURL() })) })),
+    }))
+  }
+  throw error
 } finally {
   await app?.close()
   await writeFile(rendererPath, rendererSource)
