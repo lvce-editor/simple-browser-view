@@ -85,6 +85,7 @@ export const start = async (
     }
   }
   try {
+    await context.expect.poll(() => context.electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible())).toBe(true)
     await reset(context, preferences)
     const requests: string[] = []
     server = await TestServer.start((request, response) => {
