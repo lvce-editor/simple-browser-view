@@ -15,7 +15,7 @@ const getTabTitles = async (tabs: Locator): Promise<readonly string[]> => {
   return tabs.locator('.SimpleBrowserTabTitle').allTextContents()
 }
 
-const dragBefore = async (page: Page, source: Locator, target: Locator): Promise<void> => {
+const dragTab = async (page: Page, source: Locator, target: Locator, side: 'before' | 'after'): Promise<void> => {
   const sourceBox = await source.boundingBox()
   const targetBox = await target.boundingBox()
   if (!sourceBox || !targetBox) {
@@ -23,7 +23,8 @@ const dragBefore = async (page: Page, source: Locator, target: Locator): Promise
   }
   await page.mouse.move(sourceBox.x + sourceBox.width / 2, sourceBox.y + sourceBox.height / 2)
   await page.mouse.down()
-  await page.mouse.move(targetBox.x + 1, targetBox.y + targetBox.height / 2, { steps: 10 })
+  await page.mouse.move(sourceBox.x + sourceBox.width / 2 + 10, sourceBox.y + sourceBox.height / 2, { steps: 5 })
+  await page.mouse.move(targetBox.x + (side === 'before' ? 2 : targetBox.width - 2), targetBox.y + targetBox.height / 2, { steps: 10 })
 }
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
@@ -61,20 +62,28 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await expect(tabs).toHaveCount(3)
 
     const oneTab = tabs.filter({ hasText: 'One' })
-    await dragBefore(page, tabs.filter({ hasText: 'Two' }), oneTab)
+    const twoTab = tabs.filter({ hasText: 'Two' })
+    await expect(twoTab).toHaveAttribute('draggable', 'true')
+    await dragTab(page, twoTab, oneTab, 'before')
     await expect(oneTab).toHaveClass(/SimpleBrowserTabDropBefore/)
     await page.mouse.up()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['Two', 'One', 'Three'])
     await expect(input).toHaveValue(twoUrl)
 
-    await tabs.filter({ hasText: 'Two' }).dragTo(tabs.filter({ hasText: 'Three' }))
+    await expect(twoTab).toHaveAttribute('aria-selected', 'true')
+    const threeTab = tabs.filter({ hasText: 'Three' })
+    await dragTab(page, twoTab, threeTab, 'after')
+    await expect(threeTab).toHaveClass(/SimpleBrowserTabDropAfter/)
+    await page.mouse.up()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Three', 'Two'])
     await expect(input).toHaveValue(twoUrl)
 
-    const threeTab = tabs.filter({ hasText: 'Three' })
-    await dragBefore(page, threeTab, threeTab)
+    await expect(twoTab).toHaveAttribute('aria-selected', 'true')
+    await dragTab(page, threeTab, threeTab, 'before')
     await page.mouse.up()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Three', 'Two'])
+
+    await expect(page.locator('.SimpleBrowserTabDropBefore, .SimpleBrowserTabDropAfter')).toHaveCount(0)
 
     // eslint-disable-next-line e2e/no-direct-click -- validates close behavior after a reorder
     await tabs.filter({ hasText: 'Three' }).getByRole('button', { name: 'Close Three' }).click()
