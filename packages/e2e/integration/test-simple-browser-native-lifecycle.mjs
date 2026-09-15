@@ -84,6 +84,8 @@ try {
   const address = page.locator('[name="simple-browser-address"]')
   await expect(address).toBeVisible()
   await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Example')
+  // A title can arrive before navigation commits its final address value.
+  await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   const ownership = await app.evaluate(
     ({ BrowserWindow }, [originalId, otherId]) => ({
       original: BrowserWindow.fromId(originalId)

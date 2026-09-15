@@ -67,6 +67,8 @@ try {
   let address = page.locator('[name="simple-browser-address"]')
   await expect(address).toBeVisible()
   await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Example')
+  // A title can arrive before navigation commits its final address value.
+  await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.fill(url)
   await address.evaluate((input) => input.form.requestSubmit())
   await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Restored article')

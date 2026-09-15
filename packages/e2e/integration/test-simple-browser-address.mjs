@@ -100,6 +100,7 @@ try {
   const address = page.locator('[name="simple-browser-address"]')
   await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Example Domain')
   await expect(address).toHaveValue(/^https:\/\/example\.com\/?$/)
+  await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.click()
   await expect(address).toBeFocused()
   await address.fill(url)
@@ -272,6 +273,8 @@ try {
     await page.getByRole('menuitem', { name: 'File', exact: true }).click()
     await page.getByRole('menuitem', { name: 'Open Recent', exact: true }).hover()
     await page.getByRole('menuitem', { name: folder, exact: true }).click()
+    // The menu command finishes after Explorer renders. Wait for its dismissal before opening File again.
+    await expect(page.locator('#Menu-0')).toHaveCount(0)
     await expect(page.getByRole('treeitem', { name: folder === otherFolder ? 'other.txt' : 'example.txt', exact: true })).toBeVisible()
     await expect(snapshot).toHaveCount(0)
     await expect.poll(articleVisible).toBe(true)
