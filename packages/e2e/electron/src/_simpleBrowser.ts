@@ -68,7 +68,9 @@ export const show = async (page: Page): Promise<void> => {
 
 export const setUrl = async (page: Page, url: string): Promise<void> => {
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
-  await input.focus()
+  // A DOM focus call does not activate the host WebContents after the native page takes focus.
+  // eslint-disable-next-line e2e/no-direct-click -- exercise the user's native focus transition
+  await input.click()
   await input.evaluate((element: HTMLInputElement) => element.setSelectionRange(element.value.length, element.value.length))
   await input.press(process.platform === 'darwin' ? 'Meta+l' : 'Control+l')
   await page.waitForFunction(() => {
