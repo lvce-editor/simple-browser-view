@@ -36,16 +36,17 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
   const shortcutsPromise = SimpleBrowserPreferences.getShortCuts()
 
   // Start creating the native view while the independent worker preferences are loading. This
-  // keeps the browser navigation on the critical path instead of waiting for unrelated RPCs.
+  // keeps view creation off the critical path without navigating before the worker state is ready.
   // @ts-ignore
   const actualId = await ElectronWebContentsView.createWebContentsView(id, uid)
-  const pageLoadPromise = id === actualId ? Promise.resolve() : ElectronWebContentsViewFunctions.setIframeSrc(actualId, iframeSrc)
   const [keyBindings, suggestionsEnabled, shortcuts] = await Promise.all([keyBindingsPromise, suggestionsEnabledPromise, shortcutsPromise])
 
   if (id) {
     await ElectronWebContentsViewFunctions.setFallthroughKeyBindings(keyBindings)
     await ElectronWebContentsViewFunctions.resizeWebContentsView(actualId, browserViewX, browserViewY, browserViewWidth, browserViewHeight)
-    await pageLoadPromise
+    if (id !== actualId) {
+      await ElectronWebContentsViewFunctions.setIframeSrc(actualId, iframeSrc)
+    }
     const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(actualId)
     const tab: SimpleBrowserTab = {
       browserViewId: actualId,
@@ -73,7 +74,7 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
   await ElectronWebContentsViewFunctions.setFallthroughKeyBindings(fallThroughKeyBindings)
   await ElectronWebContentsViewFunctions.resizeWebContentsView(actualId, browserViewX, browserViewY, browserViewWidth, browserViewHeight)
   Assert.number(actualId)
-  await pageLoadPromise
+  await ElectronWebContentsViewFunctions.setIframeSrc(actualId, iframeSrc)
   const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(actualId)
   const tab: SimpleBrowserTab = {
     browserViewId: actualId,

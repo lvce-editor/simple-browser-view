@@ -42,7 +42,7 @@ jest.unstable_mockModule('../src/parts/SimpleBrowserPreferences/SimpleBrowserPre
 
 const LoadContent = await import('../src/parts/LoadContent/LoadContent.ts')
 
-test('starts browser navigation while worker preferences are loading', async () => {
+test('starts native view creation while worker preferences are loading', async () => {
   const loading = LoadContent.loadContent(
     {
       headerHeight: 40,
@@ -59,7 +59,7 @@ test('starts browser navigation while worker preferences are loading', async () 
   await new Promise((resolve) => setTimeout(resolve, 0))
 
   expect(createWebContentsView).toHaveBeenCalledWith(0, 7)
-  expect(setIframeSrc).toHaveBeenCalledWith(42, 'https://example.com')
+  expect(setIframeSrc).not.toHaveBeenCalled()
   expect(setFallthroughKeyBindings).not.toHaveBeenCalled()
 
   resolveKeyBindings([])
@@ -70,4 +70,5 @@ test('starts browser navigation while worker preferences are loading', async () 
     title: 'Example',
     uri: 'simple-browser://42',
   })
+  expect(setIframeSrc).toHaveBeenCalledWith(42, 'https://example.com')
 })
