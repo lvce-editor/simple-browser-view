@@ -106,20 +106,23 @@ try {
   await expect(address).toBeFocused()
   await address.fill(url)
   await address.press('Enter')
-  const guestSnapshot = () =>
-    app.evaluate(async ({ webContents }, urlPrefix) => {
-      const contents = webContents.getAllWebContents().find((item) => item.getURL().startsWith(urlPrefix))
-      if (!contents) return undefined
-      return {
-        id: contents.id,
-        listeners: Object.fromEntries(
-          ['before-input-event', 'before-mouse-event', 'focus', 'blur', 'context-menu'].map((name) => [name, contents.listenerCount(name)]),
-        ),
-        data: await contents.executeJavaScript(
-          '({ token: documentToken, draft: document.querySelector("#draft").value, scroll: scrollY, audio: window.audioContext?.state })',
-        ),
-      }
-    }, url)
+  const guestSnapshot = (targetId) =>
+    app.evaluate(
+      async ({ webContents }, { targetId, urlPrefix }) => {
+        const contents = webContents.getAllWebContents().find((item) => (targetId ? item.id === targetId : item.getURL().startsWith(urlPrefix)))
+        if (!contents) return undefined
+        return {
+          id: contents.id,
+          listeners: Object.fromEntries(
+            ['before-input-event', 'before-mouse-event', 'focus', 'blur', 'context-menu'].map((name) => [name, contents.listenerCount(name)]),
+          ),
+          data: await contents.executeJavaScript(
+            '({ token: documentToken, draft: document.querySelector("#draft").value, scroll: scrollY, audio: window.audioContext?.state })',
+          ),
+        }
+      },
+      { targetId, urlPrefix: url },
+    )
   await expect.poll(guestSnapshot).toBeTruthy()
   const focusedGuest = await guestSnapshot()
   if (!focusedGuest) throw new Error('Expected the browser page to remain available before focusing the address')
@@ -138,19 +141,19 @@ try {
     .toBe(true)
   await expect(address).toBeFocused()
   await expect(address).toHaveValue(focusedAddress)
-  await app.evaluate(async ({ webContents }, urlPrefix) => {
-    const guest = webContents.getAllWebContents().find((item) => item.getURL().startsWith(urlPrefix))
+  await app.evaluate(async ({ webContents }, targetId) => {
+    const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
     await guest.executeJavaScript(
       'document.querySelector("#draft").value="keep this draft";document.querySelector("#play").click();scrollTo(0,300)',
       true,
     )
-  }, url)
-  await app.evaluate(({ webContents }, prefix) => {
-    const guest = webContents.getAllWebContents().find((item) => item.getURL().startsWith(prefix))
+  }, focusedGuest.id)
+  await app.evaluate(({ webContents }, targetId) => {
+    const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
     guest.focus()
     guest.sendInputEvent({ type: 'keyDown', keyCode: 'L', modifiers: ['control'] })
     guest.sendInputEvent({ type: 'keyUp', keyCode: 'L', modifiers: ['control'] })
-  }, url)
+  }, focusedGuest.id)
   await expect(address).toBeFocused()
   await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([0, url.length])
   await address.fill('known')
@@ -184,18 +187,18 @@ try {
   await address.press('Escape')
   await address.fill(url)
   await address.press('Escape')
-  const tokenBeforeMouseNavigation = (await guestSnapshot()).data.token
+  const tokenBeforeMouseNavigation = (await guestSnapshot(focusedGuest.id)).data.token
   await address.fill(url.slice(0, -3))
   await page.getByRole('option', { name: url, exact: true }).click()
   await expect(page.locator('.SimpleBrowserSuggestions')).toHaveCount(0)
-  await expect.poll(async () => (await guestSnapshot()).data.token).not.toBe(tokenBeforeMouseNavigation)
-  await app.evaluate(async ({ webContents }, targetUrl) => {
+  await expect.poll(async () => (await guestSnapshot(focusedGuest.id)).data.token).not.toBe(tokenBeforeMouseNavigation)
+  await app.evaluate(async ({ webContents }, targetId) => {
     await webContents
       .getAllWebContents()
-      .find((item) => item.getURL() === targetUrl)
+      .find((item) => item.id === targetId)
       .executeJavaScript('document.querySelector("#draft").value="keep this draft";document.querySelector("#play").click();scrollTo(0,300)', true)
-  }, url)
-  const before = await guestSnapshot()
+  }, focusedGuest.id)
+  const before = await guestSnapshot(focusedGuest.id)
   const button = page.locator('.SimpleBrowserFullWidthButton')
   await button.click()
   await expect(page.locator('[name="editor"]')).toBeFocused()
@@ -216,7 +219,7 @@ try {
     timings.push(performance.now() - start)
     if (index % 2 === 0) assert.deepEqual(await page.locator('.SimpleBrowser').boundingBox(), codingBrowserBounds)
   }
-  assert.deepEqual(await guestSnapshot(), before)
+  assert.deepEqual(await guestSnapshot(focusedGuest.id), before)
   const dimensions = await page.locator('.SimpleBrowser').boundingBox()
   assert.equal(dimensions.x, 0)
   assert.equal(dimensions.width, await page.evaluate(() => innerWidth))
@@ -290,7 +293,7 @@ try {
   await expect.poll(async () => (await page.locator('.SimpleBrowser').boundingBox()).width).toBe(1100)
   await button.click()
   await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
-  assert.equal((await guestSnapshot()).id, before.id)
+  assert.equal((await guestSnapshot(focusedGuest.id)).id, before.id)
   const evidence = join(root, '.tmp/browser-workspace-evidence')
   await mkdir(evidence, { recursive: true })
   await page.screenshot({ path: join(evidence, 'split.png') })
