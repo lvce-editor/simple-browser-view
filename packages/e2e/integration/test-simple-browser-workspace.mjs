@@ -141,6 +141,17 @@ try {
     .toBe(true)
   await expect(address).toBeFocused()
   await expect(address).toHaveValue(focusedAddress)
+  await address.fill(url)
+  await address.press('Enter')
+  await expect
+    .poll(() =>
+      app.evaluate(
+        ({ webContents }, { targetId, urlPrefix }) =>
+          webContents.getAllWebContents().some((item) => item.id === targetId && item.getURL().startsWith(urlPrefix)),
+        { targetId: focusedGuest.id, urlPrefix: url },
+      ),
+    )
+    .toBe(true)
   await app.evaluate(async ({ webContents }, targetId) => {
     const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
     await guest.executeJavaScript(
