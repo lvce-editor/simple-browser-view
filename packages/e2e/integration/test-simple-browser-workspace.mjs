@@ -121,13 +121,16 @@ try {
       }
     }, url)
   await expect.poll(guestSnapshot).toBeTruthy()
+  const focusedGuest = await guestSnapshot()
+  if (!focusedGuest) throw new Error('Expected the browser page to remain available before focusing the address')
   const focusedAddress = await address.inputValue()
   await address.focus()
   await expect(address).toBeFocused()
-  await app.evaluate(async ({ webContents }, targetUrl) => {
-    const guest = webContents.getAllWebContents().find((item) => item.getURL().startsWith(targetUrl))
+  await app.evaluate(async ({ webContents }, targetId) => {
+    const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
+    if (!guest) throw new Error(`Expected browser WebContents ${targetId} to remain available while the address is focused`)
     await guest.executeJavaScript("history.pushState({}, '', '/pushed-while-address-focused')")
-  }, url)
+  }, focusedGuest.id)
   await expect
     .poll(() =>
       app.evaluate(({ webContents }) => webContents.getAllWebContents().some((item) => item.getURL().endsWith('/pushed-while-address-focused'))),
