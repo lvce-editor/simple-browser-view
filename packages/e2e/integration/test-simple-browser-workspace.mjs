@@ -125,7 +125,7 @@ try {
   await address.focus()
   await expect(address).toBeFocused()
   await app.evaluate(async ({ webContents }, targetUrl) => {
-    const guest = webContents.getAllWebContents().find((item) => item.getURL() === targetUrl)
+    const guest = webContents.getAllWebContents().find((item) => item.getURL().startsWith(targetUrl))
     await guest.executeJavaScript("history.pushState({}, '', '/pushed-while-address-focused')")
   }, url)
   await expect
