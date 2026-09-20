@@ -121,6 +121,20 @@ try {
       }
     }, url)
   await expect.poll(guestSnapshot).toBeTruthy()
+  const focusedAddress = await address.inputValue()
+  await address.focus()
+  await expect(address).toBeFocused()
+  await app.evaluate(async ({ webContents }, targetUrl) => {
+    const guest = webContents.getAllWebContents().find((item) => item.getURL() === targetUrl)
+    await guest.executeJavaScript("history.pushState({}, '', '/pushed-while-address-focused')")
+  }, url)
+  await expect
+    .poll(() =>
+      app.evaluate(({ webContents }) => webContents.getAllWebContents().some((item) => item.getURL().endsWith('/pushed-while-address-focused'))),
+    )
+    .toBe(true)
+  await expect(address).toBeFocused()
+  await expect(address).toHaveValue(focusedAddress)
   await app.evaluate(async ({ webContents }, urlPrefix) => {
     const guest = webContents.getAllWebContents().find((item) => item.getURL().startsWith(urlPrefix))
     await guest.executeJavaScript(
