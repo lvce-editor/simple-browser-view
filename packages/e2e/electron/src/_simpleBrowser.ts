@@ -38,6 +38,8 @@ export const show = async (page: Page): Promise<void> => {
     .context()
     .route('https://example.com/**', (route) => route.fulfill({ body: '<title>Initial browser page</title>', contentType: 'text/html' }))
   await page.locator('.Workbench').waitFor({ state: 'visible' })
+  // Initial sidebar hydration rerenders the layout and can remove an early command palette.
+  await page.locator('.SideBar .Explorer').waitFor({ state: 'visible' })
   await page.bringToFront()
   const shortcut = process.platform === 'darwin' ? 'Meta+Shift+P' : 'Control+Shift+P'
   const quickPick = page.locator('.QuickPick')
