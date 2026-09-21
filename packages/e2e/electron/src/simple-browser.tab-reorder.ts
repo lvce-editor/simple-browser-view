@@ -1,4 +1,6 @@
 import type { Locator, Page } from '@playwright/test'
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
@@ -29,7 +31,13 @@ const dragTab = async (page: Page, source: Locator, target: Locator, side: 'befo
   await page.mouse.move(targetBox.x + (side === 'before' ? 2 : targetBox.width - 2), targetBox.y + targetBox.height / 2)
 }
 
-export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
+export const test = async ({ electronApp, expect, page }: ElectronTestContext): Promise<void> => {
+  const directory = join(process.cwd(), '.test-with-playwright', 'artifacts')
+  await mkdir(directory, { recursive: true })
+  await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
+  const errors: string[] = []
+  page.on('pageerror', (error) => errors.push(String(error)))
+  let stage = 'startup'
   const server = await TestServer.start((request, response) => {
     const body = pages[request.url || '']
     if (!body) {
@@ -48,21 +56,25 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
   try {
     await SimpleBrowser.show(page)
+    stage = 'navigate one'
     await SimpleBrowser.openUrl(page, oneUrl)
     // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
     await newTabButton.click()
     await expect(tabs).toHaveCount(2)
     await expect(input).toHaveValue('')
     await expect(input).toBeFocused()
+    stage = 'navigate two'
     await SimpleBrowser.openUrl(page, twoUrl)
     // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
     await newTabButton.click()
     await expect(tabs).toHaveCount(3)
     await expect(input).toHaveValue('')
     await expect(input).toBeFocused()
+    stage = 'navigate three'
     await SimpleBrowser.openUrl(page, threeUrl)
     await expect(tabs).toHaveCount(3)
 
+    stage = 'drag tabs'
     const oneTab = tabs.filter({ hasText: 'One' })
     const twoTab = tabs.filter({ hasText: 'Two' })
     await expect(twoTab).toHaveAttribute('draggable', 'true')
@@ -96,6 +108,41 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await newTabButton.click()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Two', 'New Tab'])
   } finally {
+    await writeFile(
+      join(directory, 'state.json'),
+      JSON.stringify(
+        {
+          stage,
+          errors,
+          pages: page
+            .context()
+            .pages()
+            .map((candidate) => candidate.url()),
+          dom: await page
+            .evaluate(() => ({
+              html: document.documentElement.outerHTML,
+              focused: document.hasFocus(),
+              active: document.activeElement?.outerHTML,
+              selection: (() => {
+                const input = document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
+                return input && { start: input.selectionStart, end: input.selectionEnd, value: input.value }
+              })(),
+            }))
+            .catch(String),
+          native: await electronApp
+            .evaluate(({ BrowserWindow, webContents }) => ({
+              windows: BrowserWindow.getAllWindows().map((window) => ({ focused: window.isFocused(), visible: window.isVisible() })),
+              contents: webContents
+                .getAllWebContents()
+                .map((contents) => ({ id: contents.id, url: contents.getURL(), focused: contents.isFocused() })),
+            }))
+            .catch(String),
+        },
+        null,
+        2,
+      ),
+    )
+    await page.context().tracing.stop({ path: join(directory, 'tab-drag.zip') })
     await server.close()
   }
 }
