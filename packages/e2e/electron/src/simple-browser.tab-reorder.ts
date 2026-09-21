@@ -40,6 +40,30 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
   page.on('pageerror', (error) => {
     errors.push(String(error))
   })
+  const patched = await electronApp.evaluate(async ({ app }) => {
+    const { glob, readFile, writeFile } = await import('node:fs/promises')
+    const { join } = await import('node:path')
+    const matches: string[] = []
+    const paths = glob('**/rendererProcessMain.js', { cwd: app.getAppPath() })
+    for await (const path of paths) matches.push(join(app.getAppPath(), path))
+    if (matches.length !== 1) throw new Error(`Expected one renderer bundle, found ${matches.length} under ${app.getAppPath()}`)
+    const path = matches[0]
+    const source = await readFile(path, 'utf8')
+    const marker = /const handleJsonRpcMessage = async \(([^)]*)\) => \{/g
+    if (source.matchAll(marker).toArray().length !== 1) throw new Error('Renderer RPC capture target changed')
+    const patched = source.replaceAll(marker, (match, parameters: string) => {
+      const expression = parameters.includes('...args')
+        ? '(args.length === 1 ? args[0].message : args[1])'
+        : parameters.includes('message')
+          ? 'message'
+          : ''
+      if (!expression) throw new Error(`Unknown RPC receiver parameters: ${parameters}`)
+      return `${match}\ntry { const capture = globalThis.___receivedMessages ||= []; if (capture.length < 10000) capture.push({time:performance.now(),payload:JSON.parse(JSON.stringify(${expression}))}); } catch {}`
+    })
+    await writeFile(path, patched)
+    return { path, source }
+  })
+  await page.reload()
   let stage = 'startup'
   const server = await TestServer.start((request, response) => {
     const body = pages[request.url || '']
@@ -158,6 +182,7 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
               active: globalThis.document.activeElement?.outerHTML,
               focused: globalThis.document.hasFocus(),
               html: globalThis.document.documentElement.outerHTML,
+              messages: (globalThis as typeof globalThis & { ___receivedMessages?: unknown[] }).___receivedMessages,
               selection: ((): { start: number | null; end: number | null; value: string } | null => {
                 const input = globalThis.document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
                 return input && { end: input.selectionEnd, start: input.selectionStart, value: input.value }
@@ -186,5 +211,9 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
     )
     await page.context().tracing.stop({ path: join(directory, 'tab-drag.zip') })
     await server.close()
+    await electronApp.evaluate(async (_electron, original) => {
+      const { writeFile } = await import('node:fs/promises')
+      await writeFile(original.path, original.source)
+    }, patched)
   }
 }
