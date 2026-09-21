@@ -166,3 +166,51 @@ jobs:
           if test -f "$RUNNER_TEMP/weston.pid"; then
             kill -- "-$(cat "$RUNNER_TEMP/weston.pid")" 2>/dev/null || true
           fi
+
+  flaky-tab-drag:
+    name: Tab drag attempt ${{ matrix.attempt }}
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+      - name: Compute node modules cache key
+        id: nodeModulesCacheKey
+        run: echo "value=$(node packages/build/src/computeNodeModulesCacheKey.js)" >> $GITHUB_OUTPUT
+        shell: bash
+      - uses: actions/cache@v6
+        id: npm-cache
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-cacheNodeModules-${{ steps.nodeModulesCacheKey.outputs.value }}
+      - name: npm ci
+        run: npm ci
+        if: steps.npm-cache.outputs.cache-hit != 'true'
+      - run: npm run build
+      - run: npm run build:static
+      - name: Cache Electron app
+        uses: actions/cache@v4
+        with:
+          path: packages/e2e/.test-with-playwright/electron
+          key: ${{ runner.os }}-simple-browser-electron-${{ env.LVCE_ELECTRON_VERSION }}
+      - name: Reproduce tab dragging
+        working-directory: ./packages/e2e
+        run: |
+          set -o pipefail
+          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder 2>&1 | tee tab-drag.log
+      - name: Upload attempt evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tab-drag-${{ matrix.attempt }}
+          include-hidden-files: true
+          path: |
+            packages/e2e/tab-drag.log
+            packages/e2e/.test-with-playwright/artifacts
+          if-no-files-found: error
