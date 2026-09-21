@@ -82,7 +82,11 @@ export const setUrl = async (page: Page, url: string): Promise<void> => {
 
 export const openUrl = async (page: Page, url: string, expectedUrl: string = url): Promise<Page> => {
   await setUrl(page, url)
-  return waitForWebContentsPage(page, expectedUrl)
+  const webContentsPage = await waitForWebContentsPage(page, expectedUrl)
+  // Native DOM readiness precedes the host's navigation-completion render.
+  // Wait before the next action can type into or switch away from this tab.
+  await page.locator('.SimpleBrowserHeader .MaskIconRefresh').waitFor({ state: 'visible' })
+  return webContentsPage
 }
 
 export const clickLink = async (webContentsPage: Page, name: string): Promise<void> => {
