@@ -168,7 +168,7 @@ jobs:
           fi
 
   flaky-tab-drag:
-    name: Tab drag attempt ${{ matrix.attempt }}
+    name: Suggestion dismissal attempt ${{ matrix.attempt }}
     strategy:
       fail-fast: false
       matrix:
@@ -199,16 +199,23 @@ jobs:
         with:
           path: packages/e2e/.test-with-playwright/electron
           key: ${{ runner.os }}-simple-browser-electron-${{ env.LVCE_ELECTRON_VERSION }}
-      - name: Reproduce tab dragging
+      - name: Install renderer message capture
+        working-directory: ./packages/e2e
+        run: node electron/trace-shortcuts.mjs
+      - name: Reproduce suggestion dismissal
         working-directory: ./packages/e2e
         run: |
           set -o pipefail
-          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder 2>&1 | tee tab-drag.log
+          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.suggestions-escape-keeps-text 2>&1 | tee tab-drag.log
+      - name: Restore cached renderer
+        if: always()
+        working-directory: ./packages/e2e
+        run: node electron/trace-shortcuts.mjs --restore
       - name: Upload attempt evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: tab-drag-${{ matrix.attempt }}
+          name: suggestion-escape-${{ matrix.attempt }}
           include-hidden-files: true
           path: |
             packages/e2e/tab-drag.log

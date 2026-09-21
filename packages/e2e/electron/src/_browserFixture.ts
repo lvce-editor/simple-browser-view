@@ -78,6 +78,10 @@ export const start = async (
   const close = async (): Promise<void> => {
     try {
       await writeFile(join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.errors.json`), JSON.stringify(errors))
+      const messages = await context.page.evaluate(
+        () => (globalThis as typeof globalThis & { ___receivedMessages?: unknown[] }).___receivedMessages || [],
+      )
+      await writeFile(join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.messages.json`), JSON.stringify(messages))
       await context.page.context().tracing.stop({ path: join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.zip`) })
     } finally {
       context.page.off('pageerror', onPageError)
