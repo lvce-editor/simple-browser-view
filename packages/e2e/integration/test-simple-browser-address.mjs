@@ -67,7 +67,7 @@ try {
       let payload;
       try {
         const seen = new WeakSet();
-        payload = JSON.parse(JSON.stringify(args, (key, value) => {
+        payload = JSON.parse(JSON.stringify(args.length === 1 ? args[0].message : args[1], (key, value) => {
           if (typeof value === 'bigint') return String(value);
           if (value && typeof value === 'object') {
             if (seen.has(value)) return '[Circular]';
