@@ -1,3 +1,4 @@
+/* eslint-disable unicorn/prefer-await, @typescript-eslint/unbound-method, unicorn/no-this-outside-of-class -- temporary failure diagnostics preserve capture when a target closes */
 import type { Locator, Page } from '@playwright/test'
 import { mkdir, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
@@ -36,7 +37,9 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
   await mkdir(directory, { recursive: true })
   await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   const errors: string[] = []
-  page.on('pageerror', (error) => errors.push(String(error)))
+  page.on('pageerror', (error) => {
+    errors.push(String(error))
+  })
   let stage = 'startup'
   const server = await TestServer.start((request, response) => {
     const body = pages[request.url || '']
@@ -56,6 +59,44 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
   try {
     await SimpleBrowser.show(page)
+    await page.evaluate(() => {
+      const { document, HTMLInputElement, performance } = globalThis
+      const trace: unknown[] = []
+      Object.assign(globalThis, { __tabDragTrace: trace })
+      const record = (kind: string): void => {
+        const input = globalThis.document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
+        trace.push({
+          active: document.activeElement?.getAttribute('name'),
+          end: input?.selectionEnd,
+          kind,
+          stack: new Error('selection observation').stack,
+          start: input?.selectionStart,
+          time: performance.now(),
+          value: input?.value,
+        })
+      }
+      for (const type of ['keydown', 'keyup', 'focusin', 'focusout', 'select', 'selectionchange']) {
+        document.addEventListener(type, (event) => record(`${type}:${'key' in event ? event.key : ''}`), { capture: true })
+      }
+      const { select } = HTMLInputElement.prototype
+      HTMLInputElement.prototype.select = function (): void {
+        select.call(this)
+        record('select()')
+      }
+      const { setSelectionRange } = HTMLInputElement.prototype
+      HTMLInputElement.prototype.setSelectionRange = function (...args: Parameters<HTMLInputElement['setSelectionRange']>): void {
+        setSelectionRange.apply(this, args)
+        record('setSelectionRange()')
+      }
+      const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!
+      Object.defineProperty(HTMLInputElement.prototype, 'value', {
+        ...descriptor,
+        set(value: string): void {
+          descriptor.set!.call(this, value)
+          record('value=')
+        },
+      })
+    })
     stage = 'navigate one'
     await SimpleBrowser.openUrl(page, oneUrl)
     // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
@@ -112,31 +153,32 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
       join(directory, 'state.json'),
       JSON.stringify(
         {
-          stage,
+          dom: await page
+            .evaluate(() => ({
+              active: globalThis.document.activeElement?.outerHTML,
+              focused: globalThis.document.hasFocus(),
+              html: globalThis.document.documentElement.outerHTML,
+              selection: ((): { start: number | null; end: number | null; value: string } | null => {
+                const input = globalThis.document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
+                return input && { end: input.selectionEnd, start: input.selectionStart, value: input.value }
+              })(),
+              trace: (globalThis as typeof globalThis & { __tabDragTrace?: unknown[] }).__tabDragTrace,
+            }))
+            .catch(String),
           errors,
+          native: await electronApp
+            .evaluate(({ BrowserWindow, webContents }) => ({
+              contents: webContents
+                .getAllWebContents()
+                .map((contents) => ({ focused: contents.isFocused(), id: contents.id, url: contents.getURL() })),
+              windows: BrowserWindow.getAllWindows().map((window) => ({ focused: window.isFocused(), visible: window.isVisible() })),
+            }))
+            .catch(String),
           pages: page
             .context()
             .pages()
             .map((candidate) => candidate.url()),
-          dom: await page
-            .evaluate(() => ({
-              html: document.documentElement.outerHTML,
-              focused: document.hasFocus(),
-              active: document.activeElement?.outerHTML,
-              selection: (() => {
-                const input = document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
-                return input && { start: input.selectionStart, end: input.selectionEnd, value: input.value }
-              })(),
-            }))
-            .catch(String),
-          native: await electronApp
-            .evaluate(({ BrowserWindow, webContents }) => ({
-              windows: BrowserWindow.getAllWindows().map((window) => ({ focused: window.isFocused(), visible: window.isVisible() })),
-              contents: webContents
-                .getAllWebContents()
-                .map((contents) => ({ id: contents.id, url: contents.getURL(), focused: contents.isFocused() })),
-            }))
-            .catch(String),
+          stage,
         },
         null,
         2,
