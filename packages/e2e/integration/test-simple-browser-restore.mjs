@@ -62,20 +62,8 @@ try {
       .protocol.handle('https', () => new Response('<title>Example</title>', { headers: { 'Content-Type': 'text/html' } }))
   })
   let page = await app.firstWindow()
-  const startupStarted = Date.now()
-  try {
-    await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
-  } catch (error) {
-    console.log('STARTUP_TIMEOUT', JSON.stringify({ elapsedMs: Date.now() - startupStarted, url: page.url() }))
-    // Observe the same launch after the original failure; never convert it to a pass.
-    try {
-      await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible({ timeout: 20000 })
-      console.log('STARTUP_EVENTUALLY_READY', JSON.stringify({ elapsedMs: Date.now() - startupStarted, url: page.url() }))
-    } catch (observationError) {
-      console.log('STARTUP_STILL_MISSING', String(observationError))
-    }
-    throw error
-  }
+  // Cold source-mode startup loads workers before Explorer becomes available.
+  await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible({ timeout: 15000 })
   await page.keyboard.press('Control+Alt+1')
   let address = page.locator('[name="simple-browser-address"]')
   await expect(address).toBeVisible()
