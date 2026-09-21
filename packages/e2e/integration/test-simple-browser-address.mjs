@@ -63,7 +63,23 @@ try {
     receiver +
       `
     const entries = globalThis.___receivedMessages ||= [];
-    if (entries.length < 15000) entries.push({ sequence: entries.length, time: performance.now(), direction: 'worker-to-renderer', payload: JSON.parse(JSON.stringify(args)) });
+    if (entries.length < 15000) {
+      let payload;
+      try {
+        const seen = new WeakSet();
+        payload = JSON.parse(JSON.stringify(args, (key, value) => {
+          if (typeof value === 'bigint') return String(value);
+          if (value && typeof value === 'object') {
+            if (seen.has(value)) return '[Circular]';
+            seen.add(value);
+            if (value === globalThis) return '[Window]';
+            if (value instanceof Event) return { type: value.type, data: value.data };
+          }
+          return value;
+        }));
+      } catch (error) { payload = { captureError: String(error) }; }
+      entries.push({ sequence: entries.length, time: performance.now(), direction: 'worker-to-renderer', payload });
+    }
   `,
   )
   await writeFile(rendererPath, capturedRenderer.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
