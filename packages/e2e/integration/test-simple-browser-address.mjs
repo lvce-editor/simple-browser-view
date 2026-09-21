@@ -110,7 +110,6 @@ try {
   })
   const page = await app.firstWindow()
   diagnosticPage = page
-  await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   await page.evaluate(() => {
     const entries = (globalThis.___addressEvents = [])
     const record = (event) => {
@@ -216,7 +215,7 @@ try {
   await expect(page.locator('[name="editor"]')).toBeFocused()
   // Blur suggestions while opening an Explorer menu, then dismiss it immediately.
   // The native page must stay attached, and the snapshot must remain owned by the menu.
-  for (let iteration = 0; iteration < 20; iteration++) {
+  for (let iteration = 0; iteration < 100; iteration++) {
     console.log('Context menu iteration', iteration)
     await address.click()
     await address.fill('known')
