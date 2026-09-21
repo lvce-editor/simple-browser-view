@@ -42,6 +42,19 @@ jobs:
           npm run build
       - name: Install this Simple Browser revision into the fixture
         run: node packages/e2e/integration/install-fixture.mjs
+      - name: Checkout queued-focus fix
+        uses: actions/checkout@v7
+        with:
+          repository: lvce-editor/renderer-process
+          ref: a07764a15c4b231c521d88beb134a56b765c9825
+          path: .fixtures/renderer-process
+      - name: Build queued-focus fix
+        working-directory: .fixtures/renderer-process
+        run: |
+          npm ci
+          npm run build
+      - name: Install candidate renderer
+        run: node -e "require('node:fs').cpSync('.fixtures/renderer-process/.tmp/dist/dist', '.fixtures/lvce-editor/packages/renderer-worker/node_modules/@lvce-editor/renderer-process/dist', {recursive:true})"
       - name: Install Chromium
         id: chromium
         working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
@@ -115,6 +128,19 @@ jobs:
           npm run build
       - name: Install this Simple Browser revision into the fixture
         run: node packages/e2e/integration/install-fixture.mjs
+      - name: Checkout queued-focus fix
+        uses: actions/checkout@v7
+        with:
+          repository: lvce-editor/renderer-process
+          ref: a07764a15c4b231c521d88beb134a56b765c9825
+          path: .fixtures/renderer-process
+      - name: Build queued-focus fix
+        working-directory: .fixtures/renderer-process
+        run: |
+          npm ci
+          npm run build
+      - name: Install candidate renderer
+        run: node -e "require('node:fs').cpSync('.fixtures/renderer-process/.tmp/dist/dist', '.fixtures/lvce-editor/packages/renderer-worker/node_modules/@lvce-editor/renderer-process/dist', {recursive:true})"
       - name: Install Chromium
         id: chromium
         working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
@@ -132,7 +158,5 @@ jobs:
         with:
           name: address-${{ matrix.attempt }}
           include-hidden-files: true
-          path: |
-            address.log
-            address-evidence/**
+          path: address.log
           if-no-files-found: error
