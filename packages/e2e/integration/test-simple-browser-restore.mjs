@@ -62,7 +62,8 @@ try {
       .protocol.handle('https', () => new Response('<title>Example</title>', { headers: { 'Content-Type': 'text/html' } }))
   })
   let page = await app.firstWindow()
-  await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
+  // Cold source-mode startup loads workers before Explorer becomes available.
+  await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible({ timeout: 15000 })
   await page.keyboard.press('Control+Alt+1')
   let address = page.locator('[name="simple-browser-address"]')
   await expect(address).toBeVisible()
