@@ -59,7 +59,19 @@ export const show = async (page: Page): Promise<void> => {
   }
   await input.fill('>Simple Browser: Open')
   const command = quickPick.getByRole('option', { exact: true, name: 'Simple Browser: Open' })
-  await command.waitFor({ state: 'visible' })
+  try {
+    await command.waitFor({ state: 'visible' })
+  } catch (error) {
+    console.error(
+      'COMMAND_PALETTE_FAILURE',
+      await page.evaluate(() => ({
+        active: globalThis.document.activeElement?.outerHTML,
+        html: globalThis.document.querySelector('.QuickPick')?.outerHTML,
+        value: globalThis.document.querySelector<HTMLInputElement>('.QuickPick input')?.value,
+      })),
+    )
+    throw error
+  }
   await page.keyboard.press('Enter')
   await page.locator('.SimpleBrowser').last().waitFor({ state: 'visible' })
   await waitForWebContentsPage(page, 'https://example.com')
@@ -82,7 +94,11 @@ export const setUrl = async (page: Page, url: string): Promise<void> => {
 
 export const openUrl = async (page: Page, url: string, expectedUrl: string = url): Promise<Page> => {
   await setUrl(page, url)
-  return waitForWebContentsPage(page, expectedUrl)
+  const webContentsPage = await waitForWebContentsPage(page, expectedUrl)
+  // Native DOM readiness precedes the host's navigation-completion render.
+  // Wait before the next action can type into or switch away from this tab.
+  await page.locator('.SimpleBrowserHeader .MaskIconRefresh').waitFor({ state: 'visible' })
+  return webContentsPage
 }
 
 export const clickLink = async (webContentsPage: Page, name: string): Promise<void> => {
