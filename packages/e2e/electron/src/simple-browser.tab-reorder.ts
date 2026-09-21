@@ -1,6 +1,6 @@
 /* eslint-disable unicorn/prefer-await, @typescript-eslint/unbound-method, unicorn/no-this-outside-of-class -- temporary failure diagnostics preserve capture when a target closes */
 import type { Locator, Page } from '@playwright/test'
-import { mkdir, writeFile } from 'node:fs/promises'
+import { glob, mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
@@ -40,29 +40,27 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
   page.on('pageerror', (error) => {
     errors.push(String(error))
   })
-  const patched = await electronApp.evaluate(async ({ app }) => {
-    const { glob, readFile, writeFile } = await import('node:fs/promises')
-    const { join } = await import('node:path')
+  const appPath = await electronApp.evaluate(({ app }) => app.getAppPath())
+  const patch = async (): Promise<{ path: string; source: string }> => {
     const matches: string[] = []
-    const paths = glob('**/rendererProcessMain.js', { cwd: app.getAppPath() })
-    for await (const path of paths) matches.push(join(app.getAppPath(), path))
-    if (matches.length !== 1) throw new Error(`Expected one renderer bundle, found ${matches.length} under ${app.getAppPath()}`)
+    const paths = glob('**/rendererProcessMain.js', { cwd: appPath })
+    for await (const path of paths) matches.push(join(appPath, path))
+    if (matches.length !== 1) throw new Error(`Expected one renderer bundle, found ${matches.length} under ${appPath}`)
     const path = matches[0]
     const source = await readFile(path, 'utf8')
     const marker = /const handleJsonRpcMessage = async \(([^)]*)\) => \{/g
     if (source.matchAll(marker).toArray().length !== 1) throw new Error('Renderer RPC capture target changed')
     const patched = source.replaceAll(marker, (match, parameters: string) => {
-      const expression = parameters.includes('...args')
-        ? '(args.length === 1 ? args[0].message : args[1])'
-        : parameters.includes('message')
-          ? 'message'
-          : ''
+      let expression = ''
+      if (parameters.includes('...args')) expression = '(args.length === 1 ? args[0].message : args[1])'
+      else if (parameters.includes('message')) expression = 'message'
       if (!expression) throw new Error(`Unknown RPC receiver parameters: ${parameters}`)
       return `${match}\ntry { const capture = globalThis.___receivedMessages ||= []; if (capture.length < 10000) capture.push({time:performance.now(),payload:JSON.parse(JSON.stringify(${expression}))}); } catch {}`
     })
     await writeFile(path, patched)
     return { path, source }
-  })
+  }
+  const patched = await patch()
   await page.reload()
   let stage = 'startup'
   const server = await TestServer.start((request, response) => {
@@ -211,9 +209,6 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
     )
     await page.context().tracing.stop({ path: join(directory, 'tab-drag.zip') })
     await server.close()
-    await electronApp.evaluate(async (_electron, original) => {
-      const { writeFile } = await import('node:fs/promises')
-      await writeFile(original.path, original.source)
-    }, patched)
+    await writeFile(patched.path, patched.source)
   }
 }
