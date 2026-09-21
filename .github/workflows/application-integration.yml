@@ -75,3 +75,62 @@ jobs:
       - name: History preview tab
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-history.mjs
+
+  native-lifecycle-stress:
+    name: Native lifecycle attempt ${{ matrix.attempt }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+        attempt: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      LVCE_SOURCE_ROOT: ${{ github.workspace }}/.fixtures/lvce-editor
+      PLAYWRIGHT_BROWSERS_PATH: 0
+    steps:
+      - uses: actions/checkout@v7
+      - name: Checkout application fixture
+        uses: actions/checkout@v7
+        with:
+          repository: lvce-editor/lvce-editor
+          ref: 16abbc0329e58351f7fb180c7ddba7f867a4389d
+          path: .fixtures/lvce-editor
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .fixtures/lvce-editor/.nvmrc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+      - uses: actions/cache@v6
+        with:
+          path: .fixtures/lvce-editor/**/node_modules
+          key: ${{ runner.os }}-browser-integration-${{ hashFiles('.fixtures/lvce-editor/**/package-lock.json') }}
+      - name: Install application fixture
+        working-directory: .fixtures/lvce-editor
+        run: node packages/build/src/parts/InstallDependencies/InstallDependencies.ts
+      - name: Build this Simple Browser revision
+        run: |
+          npm ci
+          npm run build
+      - name: Install this Simple Browser revision into the fixture
+        run: node packages/e2e/integration/install-fixture.mjs
+      - name: Install Chromium
+        id: chromium
+        working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
+        run: npx playwright install chromium
+      - name: Install Electron
+        working-directory: .fixtures/lvce-editor
+        run: node packages/main-process/node_modules/electron/install.js
+      - name: Native lifecycle scenario
+        run: |
+          set -o pipefail
+          xvfb-run -a node packages/e2e/integration/test-simple-browser-native-lifecycle.mjs 2>&1 | tee native-lifecycle.log
+      - name: Upload attempt evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-lifecycle-${{ matrix.attempt }}
+          include-hidden-files: true
+          path: native-lifecycle.log
+          if-no-files-found: error
