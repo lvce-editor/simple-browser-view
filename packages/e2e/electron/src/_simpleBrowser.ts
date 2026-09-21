@@ -38,6 +38,8 @@ export const show = async (page: Page): Promise<void> => {
     .context()
     .route('https://example.com/**', (route) => route.fulfill({ body: '<title>Initial browser page</title>', contentType: 'text/html' }))
   await page.locator('.Workbench').waitFor({ state: 'visible' })
+  // Initial sidebar hydration rerenders the layout and can remove an early command palette.
+  await page.locator('.SideBar .Explorer').waitFor({ state: 'visible' })
   await page.bringToFront()
   const shortcut = process.platform === 'darwin' ? 'Meta+Shift+P' : 'Control+Shift+P'
   const quickPick = page.locator('.QuickPick')
@@ -71,19 +73,22 @@ export const setUrl = async (page: Page, url: string): Promise<void> => {
   // A DOM focus call does not activate the host WebContents after the native page takes focus.
   // eslint-disable-next-line e2e/no-direct-click -- exercise the user's native focus transition
   await input.click()
-  await input.evaluate((element: HTMLInputElement) => element.setSelectionRange(element.value.length, element.value.length))
-  await input.press(process.platform === 'darwin' ? 'Meta+l' : 'Control+l')
   await page.waitForFunction(() => {
     const address = document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
-    return document.hasFocus() && document.activeElement === address && address?.selectionStart === 0 && address.selectionEnd === address.value.length
+    return document.hasFocus() && document.activeElement === address
   })
+  // Navigation setup replaces the value directly; shortcut selection has dedicated coverage.
   await input.fill(url)
   await input.press('Enter')
 }
 
 export const openUrl = async (page: Page, url: string, expectedUrl: string = url): Promise<Page> => {
   await setUrl(page, url)
-  return waitForWebContentsPage(page, expectedUrl)
+  const webContentsPage = await waitForWebContentsPage(page, expectedUrl)
+  // Native DOM readiness precedes the host's navigation-completion render.
+  // Wait before the next action can type into or switch away from this tab.
+  await page.locator('.SimpleBrowserHeader .MaskIconRefresh').waitFor({ state: 'visible' })
+  return webContentsPage
 }
 
 export const clickLink = async (webContentsPage: Page, name: string): Promise<void> => {
