@@ -14,6 +14,9 @@ const requireBuild = createRequire(join(root, 'packages/build/package.json'))
 const { _electron } = requireTests('playwright')
 const { expect } = requireTests('@playwright/test')
 const { build } = requireBuild('esbuild')
+const launchEvents = []
+const launchStarted = Date.now()
+const recordLaunch = (type, detail) => launchEvents.push({ elapsedMs: Date.now() - launchStarted, type, detail })
 const profile = await mkdtemp(join(tmpdir(), 'lvce-browser-restore-'))
 await writeFile(join(profile, 'example.txt'), 'Editor fixture')
 await mkdir(join(profile, 'config/lvce-oss'), { recursive: true })
@@ -56,6 +59,15 @@ try {
     timeout: 60000,
   }
   app = await _electron.launch(launchOptions)
+  app.process().stderr.on('data', (chunk) => recordLaunch('stderr', String(chunk)))
+  app.process().stdout.on('data', (chunk) => recordLaunch('stdout', String(chunk)))
+  app.on('window', (window) => {
+    window.on('pageerror', (error) => recordLaunch('pageerror', String(error)))
+    window.on('crash', () => recordLaunch('crash', window.url()))
+    window.on('console', (message) => {
+      if (message.type() === 'error') recordLaunch('console-error', message.text())
+    })
+  })
   await app.evaluate(({ session }) => {
     session
       .fromPartition('persist:browserView')
@@ -63,7 +75,30 @@ try {
   })
   let page = await app.firstWindow()
   // Cold source-mode startup loads workers before Explorer becomes available.
-  await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible({ timeout: 15000 })
+  const startupStarted = Date.now()
+  try {
+    await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible({ timeout: 15000 })
+  } catch (error) {
+    recordLaunch('startup-timeout', { elapsedMs: Date.now() - startupStarted, url: page.url() })
+    recordLaunch(
+      'windows',
+      await app.evaluate(({ BrowserWindow }) =>
+        BrowserWindow.getAllWindows().map((window) => ({
+          url: window.webContents.getURL(),
+          loading: window.webContents.isLoading(),
+          destroyed: window.isDestroyed(),
+        })),
+      ),
+    )
+    recordLaunch('dom', (await page.content()).slice(0, 30000))
+    try {
+      await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible({ timeout: 20000 })
+      recordLaunch('eventually-ready', { elapsedMs: Date.now() - startupStarted, url: page.url() })
+    } catch (observationError) {
+      recordLaunch('still-missing', String(observationError))
+    }
+    throw error
+  }
   await page.keyboard.press('Control+Alt+1')
   let address = page.locator('[name="simple-browser-address"]')
   await expect(address).toBeVisible()
@@ -98,6 +133,7 @@ try {
   assert.equal(heading, 'Restored article')
   console.log('PASS: app restart navigates the new native view even when its ID is reused')
 } finally {
+  console.log('LAUNCH_EVIDENCE', JSON.stringify(launchEvents))
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await new Promise((resolveClose) => server.close(resolveClose))
