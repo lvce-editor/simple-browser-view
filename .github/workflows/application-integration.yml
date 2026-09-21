@@ -132,5 +132,7 @@ jobs:
         with:
           name: address-${{ matrix.attempt }}
           include-hidden-files: true
-          path: address.log
+          path: |
+            address.log
+            address-evidence/**
           if-no-files-found: error

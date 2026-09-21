@@ -52,8 +52,21 @@ const server = createServer((_request, response) => {
 await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen))
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
+let diagnosticPage
+const diagnosticDirectory = join(process.cwd(), 'address-evidence')
+await mkdir(diagnosticDirectory, { recursive: true })
 try {
-  await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
+  const receiver = 'const handleJsonRpcMessage = async (...args) => {'
+  assert.equal(rendererSource.split(receiver).length, 2, 'Expected one renderer message receiver')
+  const capturedRenderer = rendererSource.replace(
+    receiver,
+    receiver +
+      `
+    const entries = globalThis.___receivedMessages ||= [];
+    if (entries.length < 15000) entries.push({ sequence: entries.length, time: performance.now(), direction: 'worker-to-renderer', payload: JSON.parse(JSON.stringify(args)) });
+  `,
+  )
+  await writeFile(rendererPath, capturedRenderer.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
   delete env.ELECTRON_RUN_AS_NODE
   for (const key of ['CONFIG', 'DATA', 'STATE', 'CACHE']) env[`XDG_${key}_HOME`] = join(profile, key.toLowerCase())
@@ -80,6 +93,24 @@ try {
     })
   })
   const page = await app.firstWindow()
+  diagnosticPage = page
+  await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
+  await page.evaluate(() => {
+    const entries = (globalThis.___addressEvents = [])
+    const record = (event) => {
+      const target = event.target
+      entries.push({
+        sequence: entries.length,
+        time: performance.now(),
+        type: event.type,
+        key: event.key,
+        target: target?.getAttribute?.('name') || target?.className,
+        value: target?.value,
+        active: document.activeElement?.getAttribute('name') || document.activeElement?.className,
+      })
+    }
+    for (const type of ['focusin', 'focusout', 'input', 'keydown', 'pointerdown', 'contextmenu']) document.addEventListener(type, record, true)
+  })
   page.setDefaultTimeout(15000)
   const captureErrors = []
   page.on('console', (message) => {
@@ -170,6 +201,7 @@ try {
   // Blur suggestions while opening an Explorer menu, then dismiss it immediately.
   // The native page must stay attached, and the snapshot must remain owned by the menu.
   for (let iteration = 0; iteration < 20; iteration++) {
+    console.log('Context menu iteration', iteration)
     await address.click()
     await address.fill('known')
     if (iteration % 2 === 0) await expect(page.locator('.SimpleBrowserSuggestions')).toBeVisible()
@@ -457,6 +489,22 @@ try {
   console.log('Closed tabs reopen from address-bar and native web-page shortcuts')
   console.log('History suggestions preserve the toolbar and typing; visible and background new-tab pages follow the browser theme')
 } finally {
+  if (diagnosticPage) {
+    await diagnosticPage
+      .evaluate(() => ({
+        messages: globalThis.___receivedMessages,
+        events: globalThis.___addressEvents,
+        active: document.activeElement?.outerHTML,
+        address: document.querySelector('[name="simple-browser-address"]')?.outerHTML,
+      }))
+      .then((data) => writeFile(join(diagnosticDirectory, 'timeline.json'), JSON.stringify(data)))
+      .catch(console.error)
+    await diagnosticPage.screenshot({ path: join(diagnosticDirectory, 'final.png') }).catch(console.error)
+    await diagnosticPage
+      .context()
+      .tracing.stop({ path: join(diagnosticDirectory, 'trace.zip') })
+      .catch(console.error)
+  }
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await new Promise((resolveClose) => server.close(resolveClose))
