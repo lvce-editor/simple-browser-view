@@ -206,7 +206,7 @@ jobs:
         working-directory: ./packages/e2e
         run: |
           set -o pipefail
-          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.response-410-html 2>&1 | tee tab-drag.log
+          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.response- 2>&1 | tee tab-drag.log
       - name: Restore cached renderer
         if: always()
         working-directory: ./packages/e2e
