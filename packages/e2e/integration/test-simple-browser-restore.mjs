@@ -61,13 +61,15 @@ try {
   app = await _electron.launch(launchOptions)
   app.process().stderr.on('data', (chunk) => recordLaunch('stderr', String(chunk)))
   app.process().stdout.on('data', (chunk) => recordLaunch('stdout', String(chunk)))
-  app.on('window', (window) => {
+  const observeWindow = (window) => {
     window.on('pageerror', (error) => recordLaunch('pageerror', String(error)))
     window.on('crash', () => recordLaunch('crash', window.url()))
     window.on('console', (message) => {
       if (message.type() === 'error') recordLaunch('console-error', message.text())
     })
-  })
+  }
+  app.on('window', observeWindow)
+  for (const window of app.windows()) observeWindow(window)
   await app.evaluate(({ session }) => {
     session
       .fromPartition('persist:browserView')
