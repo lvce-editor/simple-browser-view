@@ -222,6 +222,15 @@ try {
     ),
   )
   await page?.screenshot({ path: 'native-failure.png' })
+  const observedAt = Date.now()
+  let startupObservation
+  try {
+    await page.getByRole('tree', { name: 'Files Explorer' }).waitFor({ state: 'visible', timeout: 30000 })
+    startupObservation = { becameReady: true, millisecondsAfterFailure: Date.now() - observedAt }
+  } catch (observationError) {
+    startupObservation = { becameReady: false, millisecondsAfterFailure: Date.now() - observedAt, error: String(observationError) }
+  }
+  await writeFile('native-startup-observation.json', JSON.stringify({ ...startupObservation, html: await page.content() }, null, 2))
   throw error
 } finally {
   try {
