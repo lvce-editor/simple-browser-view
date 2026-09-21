@@ -64,7 +64,8 @@ try {
       .protocol.handle('https', () => new Response('<title>Example</title>', { headers: { 'Content-Type': 'text/html' } }))
   })
   const page = await app.firstWindow()
-  await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
+  // Cold source-mode startup includes loading the workspace and its workers.
+  await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible({ timeout: 15000 })
   const originalId = await app.evaluate(({ BrowserWindow }) => {
     const window = BrowserWindow.getAllWindows()[0]
     window.setSize(1100, 800)
