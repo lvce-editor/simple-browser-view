@@ -168,7 +168,7 @@ jobs:
           fi
 
   flaky-tab-drag:
-    name: Command palette attempt ${{ matrix.attempt }}
+    name: Final tab drag attempt ${{ matrix.attempt }}
     strategy:
       fail-fast: false
       matrix:
@@ -199,16 +199,16 @@ jobs:
         with:
           path: packages/e2e/.test-with-playwright/electron
           key: ${{ runner.os }}-simple-browser-electron-${{ env.LVCE_ELECTRON_VERSION }}
-      - name: Reproduce command palette
+      - name: Validate tab dragging
         working-directory: ./packages/e2e
         run: |
           set -o pipefail
-          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.response- 2>&1 | tee tab-drag.log
+          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder 2>&1 | tee tab-drag.log
       - name: Upload attempt evidence
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: palette-${{ matrix.attempt }}
+          name: final-tab-drag-${{ matrix.attempt }}
           include-hidden-files: true
           path: |
             packages/e2e/tab-drag.log
