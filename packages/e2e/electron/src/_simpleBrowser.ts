@@ -1,5 +1,4 @@
 import type { Page } from '@playwright/test'
-import { mkdir, writeFile } from 'node:fs/promises'
 
 const navigationTimeout = 15_000
 const commandPaletteTimeout = 5000
@@ -39,19 +38,8 @@ export const show = async (page: Page): Promise<void> => {
     .context()
     .route('https://example.com/**', (route) => route.fulfill({ body: '<title>Initial browser page</title>', contentType: 'text/html' }))
   await page.locator('.Workbench').waitFor({ state: 'visible' })
-  await page.evaluate(() => {
-    const events: unknown[] = []
-    Object.assign(globalThis, { ___paletteEvents: events })
-    for (const type of ['focusin', 'focusout', 'keydown', 'keyup', 'input']) {
-      globalThis.document.addEventListener(
-        type,
-        (event) => {
-          events.push({ key: (event as KeyboardEvent).key, target: (event.target as Element)?.outerHTML, time: globalThis.performance.now(), type })
-        },
-        { capture: true },
-      )
-    }
-  })
+  // Initial sidebar hydration rerenders the layout and can remove an early command palette.
+  await page.locator('.SideBar .Explorer').waitFor({ state: 'visible' })
   await page.bringToFront()
   const shortcut = process.platform === 'darwin' ? 'Meta+Shift+P' : 'Control+Shift+P'
   const quickPick = page.locator('.QuickPick')
@@ -73,30 +61,7 @@ export const show = async (page: Page): Promise<void> => {
   }
   await input.fill('>Simple Browser: Open')
   const command = quickPick.getByRole('option', { exact: true, name: 'Simple Browser: Open' })
-  try {
-    await command.waitFor({ state: 'visible' })
-  } catch (error) {
-    await mkdir('.test-with-playwright/artifacts', { recursive: true })
-    await writeFile(
-      '.test-with-playwright/artifacts/palette.json',
-      JSON.stringify(
-        await page.evaluate(() => ({
-          events: (globalThis as unknown as { ___paletteEvents: unknown }).___paletteEvents,
-          html: globalThis.document.body.outerHTML,
-          messages: (globalThis as unknown as { ___receivedMessages: unknown }).___receivedMessages,
-        })),
-      ),
-    )
-    console.error(
-      'COMMAND_PALETTE_FAILURE',
-      await page.evaluate(() => ({
-        active: globalThis.document.activeElement?.outerHTML,
-        html: globalThis.document.querySelector('.QuickPick')?.outerHTML,
-        value: globalThis.document.querySelector<HTMLInputElement>('.QuickPick input')?.value,
-      })),
-    )
-    throw error
-  }
+  await command.waitFor({ state: 'visible' })
   await page.keyboard.press('Enter')
   await page.locator('.SimpleBrowser').last().waitFor({ state: 'visible' })
   await waitForWebContentsPage(page, 'https://example.com')
