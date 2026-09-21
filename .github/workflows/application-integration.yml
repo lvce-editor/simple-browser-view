@@ -40,11 +40,10 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Install published renderer focus ownership fix
+        run: npm install --prefix .fixtures/renderer-release --no-package-lock --ignore-scripts --no-audit --no-fund @lvce-editor/renderer-process@30.63.2
       - name: Install this Simple Browser revision into the fixture
         run: node packages/e2e/integration/install-fixture.mjs
-      - name: Install published renderer focus ownership fix
-        working-directory: .fixtures/lvce-editor/packages/renderer-worker
-        run: npm install --no-save --package-lock=false --ignore-scripts @lvce-editor/renderer-process@30.63.2
       - name: Install Chromium
         id: chromium
         working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
@@ -116,11 +115,10 @@ jobs:
         run: |
           npm ci
           npm run build
+      - name: Install published renderer focus ownership fix
+        run: npm install --prefix .fixtures/renderer-release --no-package-lock --ignore-scripts --no-audit --no-fund @lvce-editor/renderer-process@30.63.2
       - name: Install this Simple Browser revision into the fixture
         run: node packages/e2e/integration/install-fixture.mjs
-      - name: Install published renderer focus ownership fix
-        working-directory: .fixtures/lvce-editor/packages/renderer-worker
-        run: npm install --no-save --package-lock=false --ignore-scripts @lvce-editor/renderer-process@30.63.2
       - name: Install Chromium
         id: chromium
         working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
