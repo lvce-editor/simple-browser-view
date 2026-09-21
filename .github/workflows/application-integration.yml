@@ -132,5 +132,9 @@ jobs:
         with:
           name: native-lifecycle-${{ matrix.attempt }}
           include-hidden-files: true
-          path: native-lifecycle.log
+          path: |
+            native-lifecycle.log
+            native-diagnostic.json
+            native-failure.png
+            native-trace.zip
           if-no-files-found: error

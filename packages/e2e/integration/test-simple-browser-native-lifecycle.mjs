@@ -43,6 +43,8 @@ const server = createServer((request, response) => {
 await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen))
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
+let page
+const diagnosticErrors = []
 try {
   await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
@@ -63,7 +65,13 @@ try {
       .fromPartition('persist:browserView')
       .protocol.handle('https', () => new Response('<title>Example</title>', { headers: { 'Content-Type': 'text/html' } }))
   })
-  const page = await app.firstWindow()
+  page = await app.firstWindow()
+  page.on('pageerror', (error) => diagnosticErrors.push({ kind: 'pageerror', message: String(error) }))
+  page.on('console', (message) => {
+    if (message.type() === 'error') diagnosticErrors.push({ kind: 'console', message: message.text() })
+  })
+  page.on('requestfailed', (request) => diagnosticErrors.push({ kind: 'requestfailed', url: request.url(), error: request.failure() }))
+  await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
   const originalId = await app.evaluate(({ BrowserWindow }) => {
     const window = BrowserWindow.getAllWindows()[0]
@@ -191,8 +199,33 @@ try {
   await expect.poll(getLiveIds).toEqual(ownership.original)
   await waitForLiveFrames(ownership.original[0])
   console.log('PASS: originating window owns browser tabs and native frames resume after overlays and tab switches')
+} catch (error) {
+  await writeFile(
+    'native-diagnostic.json',
+    JSON.stringify(
+      {
+        error: String(error),
+        errors: diagnosticErrors,
+        pages: app
+          ?.context()
+          .pages()
+          .map((item) => item.url()),
+        url: page?.url(),
+        html: await page?.content(),
+        windows: await app?.evaluate(({ BrowserWindow, webContents }) => ({
+          windows: BrowserWindow.getAllWindows().map((window) => ({ id: window.id, visible: window.isVisible(), url: window.webContents.getURL() })),
+          contents: webContents.getAllWebContents().map((contents) => ({ id: contents.id, url: contents.getURL(), type: contents.getType() })),
+        })),
+      },
+      null,
+      2,
+    ),
+  )
+  await page?.screenshot({ path: 'native-failure.png' })
+  throw error
 } finally {
   try {
+    if (page) await page.context().tracing.stop({ path: 'native-trace.zip' })
     await app?.close()
   } finally {
     await writeFile(rendererPath, rendererSource)
