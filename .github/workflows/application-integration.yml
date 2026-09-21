@@ -134,8 +134,4 @@ jobs:
           include-hidden-files: true
           path: |
             native-lifecycle.log
-            native-diagnostic.json
-            native-startup-observation.json
-            native-failure.png
-            native-trace.zip
           if-no-files-found: error
