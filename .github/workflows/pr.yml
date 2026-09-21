@@ -199,18 +199,11 @@ jobs:
         with:
           path: packages/e2e/.test-with-playwright/electron
           key: ${{ runner.os }}-simple-browser-electron-${{ env.LVCE_ELECTRON_VERSION }}
-      - name: Install shortcut message capture
-        working-directory: ./packages/e2e
-        run: node electron/trace-shortcuts.mjs
       - name: Reproduce tab dragging
         working-directory: ./packages/e2e
         run: |
           set -o pipefail
           xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder 2>&1 | tee tab-drag.log
-      - name: Restore cached renderer
-        if: always()
-        working-directory: ./packages/e2e
-        run: node electron/trace-shortcuts.mjs --restore
       - name: Upload attempt evidence
         if: always()
         uses: actions/upload-artifact@v7

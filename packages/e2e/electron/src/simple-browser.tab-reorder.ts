@@ -1,7 +1,4 @@
-/* eslint-disable unicorn/prefer-await, @typescript-eslint/unbound-method, unicorn/no-this-outside-of-class -- temporary failure diagnostics preserve capture when a target closes */
 import type { Locator, Page } from '@playwright/test'
-import { mkdir, writeFile } from 'node:fs/promises'
-import { join } from 'node:path'
 import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
@@ -32,15 +29,7 @@ const dragTab = async (page: Page, source: Locator, target: Locator, side: 'befo
   await page.mouse.move(targetBox.x + (side === 'before' ? 2 : targetBox.width - 2), targetBox.y + targetBox.height / 2)
 }
 
-export const test = async ({ electronApp, expect, page }: ElectronTestContext): Promise<void> => {
-  const directory = join(process.cwd(), '.test-with-playwright', 'artifacts')
-  await mkdir(directory, { recursive: true })
-  await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
-  const errors: string[] = []
-  page.on('pageerror', (error) => {
-    errors.push(String(error))
-  })
-  let stage = 'startup'
+export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
   const server = await TestServer.start((request, response) => {
     const body = pages[request.url || '']
     if (!body) {
@@ -59,63 +48,21 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
   const input = page.locator('.SimpleBrowserHeader input.InputBox')
   try {
     await SimpleBrowser.show(page)
-    await page.evaluate(() => {
-      const { document, HTMLInputElement, performance } = globalThis
-      const trace: unknown[] = []
-      Object.assign(globalThis, { __tabDragTrace: trace })
-      const record = (kind: string): void => {
-        const input = globalThis.document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
-        trace.push({
-          active: document.activeElement?.getAttribute('name'),
-          end: input?.selectionEnd,
-          kind,
-          stack: new Error('selection observation').stack,
-          start: input?.selectionStart,
-          time: performance.now(),
-          value: input?.value,
-        })
-      }
-      for (const type of ['keydown', 'keyup', 'focusin', 'focusout', 'select', 'selectionchange']) {
-        document.addEventListener(type, (event) => record(`${type}:${'key' in event ? event.key : ''}`), { capture: true })
-      }
-      const { select } = HTMLInputElement.prototype
-      HTMLInputElement.prototype.select = function (): void {
-        select.call(this)
-        record('select()')
-      }
-      const { setSelectionRange } = HTMLInputElement.prototype
-      HTMLInputElement.prototype.setSelectionRange = function (...args: Parameters<HTMLInputElement['setSelectionRange']>): void {
-        setSelectionRange.apply(this, args)
-        record('setSelectionRange()')
-      }
-      const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!
-      Object.defineProperty(HTMLInputElement.prototype, 'value', {
-        ...descriptor,
-        set(value: string): void {
-          descriptor.set!.call(this, value)
-          record('value=')
-        },
-      })
-    })
-    stage = 'navigate one'
     await SimpleBrowser.openUrl(page, oneUrl)
     // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
     await newTabButton.click()
     await expect(tabs).toHaveCount(2)
     await expect(input).toHaveValue('')
     await expect(input).toBeFocused()
-    stage = 'navigate two'
     await SimpleBrowser.openUrl(page, twoUrl)
     // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
     await newTabButton.click()
     await expect(tabs).toHaveCount(3)
     await expect(input).toHaveValue('')
     await expect(input).toBeFocused()
-    stage = 'navigate three'
     await SimpleBrowser.openUrl(page, threeUrl)
     await expect(tabs).toHaveCount(3)
 
-    stage = 'drag tabs'
     const oneTab = tabs.filter({ hasText: 'One' })
     const twoTab = tabs.filter({ hasText: 'Two' })
     await expect(twoTab).toHaveAttribute('draggable', 'true')
@@ -149,43 +96,6 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
     await newTabButton.click()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Two', 'New Tab'])
   } finally {
-    await writeFile(
-      join(directory, 'state.json'),
-      JSON.stringify(
-        {
-          dom: await page
-            .evaluate(() => ({
-              active: globalThis.document.activeElement?.outerHTML,
-              focused: globalThis.document.hasFocus(),
-              html: globalThis.document.documentElement.outerHTML,
-              messages: (globalThis as typeof globalThis & { ___receivedMessages?: unknown[] }).___receivedMessages,
-              selection: ((): { start: number | null; end: number | null; value: string } | null => {
-                const input = globalThis.document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
-                return input && { end: input.selectionEnd, start: input.selectionStart, value: input.value }
-              })(),
-              trace: (globalThis as typeof globalThis & { __tabDragTrace?: unknown[] }).__tabDragTrace,
-            }))
-            .catch(String),
-          errors,
-          native: await electronApp
-            .evaluate(({ BrowserWindow, webContents }) => ({
-              contents: webContents
-                .getAllWebContents()
-                .map((contents) => ({ focused: contents.isFocused(), id: contents.id, url: contents.getURL() })),
-              windows: BrowserWindow.getAllWindows().map((window) => ({ focused: window.isFocused(), visible: window.isVisible() })),
-            }))
-            .catch(String),
-          pages: page
-            .context()
-            .pages()
-            .map((candidate) => candidate.url()),
-          stage,
-        },
-        null,
-        2,
-      ),
-    )
-    await page.context().tracing.stop({ path: join(directory, 'tab-drag.zip') })
     await server.close()
   }
 }

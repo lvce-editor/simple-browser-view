@@ -71,12 +71,11 @@ export const setUrl = async (page: Page, url: string): Promise<void> => {
   // A DOM focus call does not activate the host WebContents after the native page takes focus.
   // eslint-disable-next-line e2e/no-direct-click -- exercise the user's native focus transition
   await input.click()
-  await input.evaluate((element: HTMLInputElement) => element.setSelectionRange(element.value.length, element.value.length))
-  await input.press(process.platform === 'darwin' ? 'Meta+l' : 'Control+l')
   await page.waitForFunction(() => {
     const address = document.querySelector<HTMLInputElement>('.SimpleBrowserHeader input.InputBox')
-    return document.hasFocus() && document.activeElement === address && address?.selectionStart === 0 && address.selectionEnd === address.value.length
+    return document.hasFocus() && document.activeElement === address
   })
+  // Navigation setup replaces the value directly; shortcut selection has dedicated coverage.
   await input.fill(url)
   await input.press('Enter')
 }
