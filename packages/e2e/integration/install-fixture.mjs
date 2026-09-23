@@ -1,4 +1,4 @@
-import { cp, readFile, rm } from 'node:fs/promises'
+import { cp, readFile, realpath, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { root } from './fixture.mjs'
 
@@ -11,7 +11,8 @@ console.log('Installed this Simple Browser build into the application fixture')
 const rendererPackage = new URL('../../../.fixtures/renderer-release/node_modules/@lvce-editor/renderer-process/', import.meta.url)
 const rendererManifest = JSON.parse(await readFile(new URL('package.json', rendererPackage), 'utf8'))
 if (rendererManifest.version !== '30.64.2') throw new Error('Expected published renderer-process 30.64.2')
-const rendererDestination = join(root, 'packages/renderer-worker/node_modules/@lvce-editor/renderer-process')
+// Preserve npm workspace links: the server and import resolver must see the same package.
+const rendererDestination = await realpath(join(root, 'packages/renderer-worker/node_modules/@lvce-editor/renderer-process'))
 await rm(rendererDestination, { recursive: true, force: true })
 await cp(rendererPackage, rendererDestination, { recursive: true })
 console.log('Installed published renderer-process 30.64.2 without changing other fixture dependencies')
