@@ -102,7 +102,26 @@ try {
   await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.click()
   await expect(address).toBeFocused()
-  await address.fill(url)
+  // Real keystrokes must retain both text and the browser's native caret.
+  await address.press('Control+a')
+  for (let index = 0; index < url.length; index++) {
+    await address.pressSequentially(url[index])
+    await expect(address).toHaveValue(url.slice(0, index + 1))
+    await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([index + 1, index + 1])
+  }
+  await expect(address).toHaveValue(url)
+  await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([url.length, url.length])
+  await address.press('ArrowLeft')
+  await address.pressSequentially('x')
+  await expect(address).toHaveValue(url.slice(0, -1) + 'x' + url.slice(-1))
+  await address.press('Backspace')
+  await expect(address).toHaveValue(url)
+  await address.press('Shift+ArrowLeft')
+  await address.pressSequentially('z')
+  await expect(address).toHaveValue(url.slice(0, -2) + 'z' + url.slice(-1))
+  await address.press('Control+a')
+  await address.pressSequentially(url)
+  await expect(address).toHaveValue(url)
   // Native submission works before focus-dependent shortcuts arrive.
   await address.evaluate((input) => {
     if (!input.form?.noValidate) throw new Error('The address form must also accept search queries')

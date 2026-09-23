@@ -102,6 +102,7 @@ try {
   const address = page.locator('[name="simple-browser-address"]')
   await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Example Domain')
   await expect(address).toHaveValue('https://example.com/')
+  await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.click()
   await expect(address).toBeFocused()
   await address.fill(url)
@@ -162,7 +163,15 @@ try {
     await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true })
     await cdp.detach()
   }
-  await address.fill('known')
+  await address.press('Control+a')
+  let typedQuery = ''
+  for (const character of 'known') {
+    typedQuery += character
+    await address.pressSequentially(character)
+    await expect(address).toHaveValue(typedQuery)
+    await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([typedQuery.length, typedQuery.length])
+    await expect(page.locator('.SimpleBrowserSuggestions')).toBeVisible()
+  }
   await expect(page.getByRole('option', { name: 'known first', exact: true })).toBeVisible()
   await expect(page.locator('.SimpleBrowserSuggestionSelected')).toHaveCount(0)
   await address.press('ArrowDown')
