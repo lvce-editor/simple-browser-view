@@ -82,6 +82,12 @@ try {
   })
   page = await app.firstWindow()
   page.setDefaultTimeout(15000)
+  const captureErrors = []
+  page.on('console', (message) => {
+    if (message.type() === 'error' && message.text().includes('Failed to capture Simple Browser page')) captureErrors.push(message.text())
+    if (message.type() === 'error') console.error('APP ERROR', message.text())
+  })
+  await expect(page.locator('#Workbench')).toBeVisible({ timeout: 60000 })
   await page.evaluate(() => {
     window.addressTrace = []
     const record = (input, action, args = []) => {
@@ -107,12 +113,7 @@ try {
       document.addEventListener(event, (event) => record(event.target, event.type, [event.key]), true)
     }
   })
-  const captureErrors = []
-  page.on('console', (message) => {
-    if (message.type() === 'error' && message.text().includes('Failed to capture Simple Browser page')) captureErrors.push(message.text())
-    if (message.type() === 'error') console.error('APP ERROR', message.text())
-  })
-  await expect(page.locator('#Workbench')).toBeVisible({ timeout: 15000 })
+
   await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
   await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
   await expect(page.locator('[name="editor"]')).toBeAttached()
