@@ -52,7 +52,6 @@ const server = createServer((_request, response) => {
 await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen))
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
-let page
 try {
   await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
@@ -80,7 +79,7 @@ try {
       return net.fetch(request.url, { bypassCustomProtocolHandlers: true })
     })
   })
-  page = await app.firstWindow()
+  const page = await app.firstWindow()
   page.setDefaultTimeout(15000)
   const captureErrors = []
   page.on('console', (message) => {
@@ -88,31 +87,6 @@ try {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
   })
   await expect(page.locator('#Workbench')).toBeVisible({ timeout: 60000 })
-  await page.evaluate(() => {
-    window.addressTrace = []
-    const record = (input, action, args = []) => {
-      if (input.name !== 'simple-browser-address') return
-      window.addressTrace.push({ action, args, value: input.value, start: input.selectionStart, end: input.selectionEnd, stack: new Error().stack })
-      if (window.addressTrace.length > 100) window.addressTrace.shift()
-    }
-    for (const action of ['focus', 'select', 'setSelectionRange']) {
-      const original = HTMLInputElement.prototype[action]
-      HTMLInputElement.prototype[action] = function (...args) {
-        record(this, action, args)
-        return original.apply(this, args)
-      }
-    }
-    for (const property of ['selectionStart', 'selectionEnd', 'value']) {
-      const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, property)
-      Object.defineProperty(HTMLInputElement.prototype, property, {
-        ...descriptor,
-        set(value) { record(this, property, [value]); descriptor.set.call(this, value) },
-      })
-    }
-    for (const event of ['focus', 'blur', 'input', 'keydown']) {
-      document.addEventListener(event, (event) => record(event.target, event.type, [event.key]), true)
-    }
-  })
 
   await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
   await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
@@ -503,7 +477,6 @@ try {
   console.log('Closed tabs reopen from address-bar and native web-page shortcuts')
   console.log('History suggestions preserve the toolbar and typing; visible and background new-tab pages follow the browser theme')
 } finally {
-  if (page && !page.isClosed()) console.log('ADDRESS_TRACE', JSON.stringify(await page.evaluate(() => window.addressTrace)))
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await new Promise((resolveClose) => server.close(resolveClose))
