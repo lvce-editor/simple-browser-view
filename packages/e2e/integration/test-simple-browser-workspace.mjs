@@ -82,6 +82,10 @@ await build({
 
         build.onLoad({ filter: /ViewletSimpleBrowser\.js$/ }, async ({ path }) => {
           let contents = await readFile(path, 'utf8')
+          contents = contents.replace(
+            'if (currentUrl && currentUrl !== url) return state',
+            'console.log("NAVIGATION stats", JSON.stringify({url,currentUrl,isFocused,focus:FocusState.get(),focusedUid:ViewletStates.getFocusedInstanceByType(ViewletModuleId.SimpleBrowser),uid:state.uid})); if (currentUrl && currentUrl !== url) return state',
+          )
           for (const name of ['handleDidNavigate', 'handleWillNavigate']) {
             contents = contents.replace(
               'export const ' + name + ' = ' + (name === 'handleDidNavigate' ? 'async ' : '') + '(state, browserViewId, value) => {',

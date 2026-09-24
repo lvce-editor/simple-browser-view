@@ -185,7 +185,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: lvce-editor/lvce-editor
-          ref: 4bd54a713f91f9b86b23687fe6234e9fce3864ab
+          ref: af2e97b18dd02f961b56048492a85aa489026acb
           path: .fixtures/lvce-editor
       - uses: actions/setup-node@v6
         with:
