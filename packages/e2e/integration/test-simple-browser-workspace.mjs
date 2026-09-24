@@ -44,7 +44,7 @@ await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
 try {
-  await writeFile(rendererPath, "(() => {\n const entries=[]; let dropped=0;\n globalThis.__browserCapture={entries,get dropped(){return dropped}};\n const record=(kind,data)=>{if(entries.length>=12000){dropped++;return}try{let raw=JSON.stringify(data,(_k,v)=>v instanceof MessagePort?'[MessagePort]':v);entries.push({seq:entries.length,time:performance.now(),kind,data:raw.length>50000?{truncated:true,text:raw.slice(0,50000)}:JSON.parse(raw)})}catch{}};\n const add=EventTarget.prototype.addEventListener;const seen=new WeakSet();\n EventTarget.prototype.addEventListener=function(type,fn,options){if(type==='message'&&!seen.has(this)){seen.add(this);add.call(this,type,e=>record('receive',e.data))}return add.call(this,type,fn,options)};\n const post=MessagePort.prototype.postMessage;MessagePort.prototype.postMessage=function(data,...args){record('send',data);return post.call(this,data,...args)};\n for(const type of ['input','submit','keydown','focusin','focusout']) add.call(document,type,e=>{const t=e.target;record(type,{key:e.key,name:t.name,value:t.value,start:t.selectionStart,end:t.selectionEnd,active:document.activeElement?.name,focused:document.hasFocus()})},true);\n add.call(window,'error',e=>record('error',{message:e.message}));add.call(window,'unhandledrejection',e=>record('rejection',{message:String(e.reason)}));\n record('renderer-start',{url:location.href});\n})();\n" + rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
+  await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
   delete env.ELECTRON_RUN_AS_NODE
   for (const key of ['CONFIG', 'DATA', 'STATE', 'CACHE']) env[`XDG_${key}_HOME`] = join(profile, key.toLowerCase())
@@ -72,15 +72,12 @@ try {
       return new Response(JSON.stringify([query, [query + ' result']]), { headers: { 'Content-Type': 'application/json' } })
     })
   })
-  await app.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   const page = await app.firstWindow()
-  page.on('pageerror', (error) => console.error('PAGE ERROR', String(error)))
-  page.on('requestfailed', (request) => console.error('REQUEST FAILED', request.url(), request.failure()?.errorText))
   page.setDefaultTimeout(15000)
   page.on('console', (message) => {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
   })
-  await expect(page.locator('#Workbench')).toBeVisible({ timeout: 60000 })
+  await expect(page.locator('#Workbench')).toBeVisible({ timeout: 15000 })
 
   const runCommand = async (label) => {
     await page.keyboard.press('Control+Shift+P')
@@ -132,7 +129,8 @@ try {
   const focusedGuest = await guestSnapshot()
   if (!focusedGuest) throw new Error('Expected the browser page to remain available before focusing the address')
   const focusedAddress = await address.inputValue()
-  await address.focus()
+  // DOM focus alone can be emulated while the native page still owns focus.
+  await address.click()
   await expect(address).toBeFocused()
   await app.evaluate(async ({ webContents }, targetId) => {
     const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
@@ -702,17 +700,6 @@ try {
     }),
   )
 } finally {
-  if (app) {
-    await mkdir('.diagnostics', { recursive: true })
-    const pages = await app.windows()
-    for (let index = 0; index < pages.length; index++) {
-      try {
-        const data = await pages[index].evaluate(() => ({ url: location.href, capture: globalThis.__browserCapture, html: document.body?.innerHTML }))
-        await writeFile('.diagnostics/workspace-' + index + '.json', JSON.stringify(data))
-      } catch (error) { console.error('CAPTURE ERROR', String(error)) }
-    }
-    await app.context().tracing.stop({ path: '.diagnostics/workspace.zip' })
-  }
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await rm(profile, { recursive: true, force: true })

@@ -3,6 +3,9 @@ import assert from 'node:assert/strict'
 const { parseKeyBindingString } = await import(
   new URL('packages/renderer-worker/src/parts/ParseKeyBindingString/ParseKeyBindingString.js', fixtureUrl)
 )
+const { getUrl: getNewTabUrl } = await import(
+  new URL('packages/renderer-worker/src/parts/SimpleBrowserNewTabPage/SimpleBrowserNewTabPage.js', fixtureUrl)
+)
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
@@ -30,6 +33,7 @@ await writeFile(
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+1'), command: 'Preferences.update', args: [{ 'simpleBrowser.chromeTheme': 'inherit' }] },
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+2'), command: 'Preferences.update', args: [{ 'simpleBrowser.chromeTheme': 'light' }] },
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+3'), command: 'Layout.handleSettingsChanged' },
+    { source: 'User', key: parseKeyBindingString('Ctrl+Alt+5'), command: 'SimpleBrowser.createNewTab', args: [true, true] },
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+4'), command: 'Layout.toggleSimpleBrowserFullWidth' },
   ]),
 )
@@ -53,7 +57,7 @@ await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
 try {
-  await writeFile(rendererPath, "(() => {\n const entries=[]; let dropped=0;\n globalThis.__browserCapture={entries,get dropped(){return dropped}};\n const record=(kind,data)=>{if(entries.length>=12000){dropped++;return}try{let raw=JSON.stringify(data,(_k,v)=>v instanceof MessagePort?'[MessagePort]':v);entries.push({seq:entries.length,time:performance.now(),kind,data:raw.length>50000?{truncated:true,text:raw.slice(0,50000)}:JSON.parse(raw)})}catch{}};\n const add=EventTarget.prototype.addEventListener;const seen=new WeakSet();\n EventTarget.prototype.addEventListener=function(type,fn,options){if(type==='message'&&!seen.has(this)){seen.add(this);add.call(this,type,e=>record('receive',e.data))}return add.call(this,type,fn,options)};\n const post=MessagePort.prototype.postMessage;MessagePort.prototype.postMessage=function(data,...args){record('send',data);return post.call(this,data,...args)};\n for(const type of ['input','submit','keydown','focusin','focusout']) add.call(document,type,e=>{const t=e.target;record(type,{key:e.key,name:t.name,value:t.value,start:t.selectionStart,end:t.selectionEnd,active:document.activeElement?.name,focused:document.hasFocus()})},true);\n add.call(window,'error',e=>record('error',{message:e.message}));add.call(window,'unhandledrejection',e=>record('rejection',{message:String(e.reason)}));\n record('renderer-start',{url:location.href});\n})();\n" + rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
+  await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
   delete env.ELECTRON_RUN_AS_NODE
   for (const key of ['CONFIG', 'DATA', 'STATE', 'CACHE']) env[`XDG_${key}_HOME`] = join(profile, key.toLowerCase())
@@ -79,17 +83,14 @@ try {
       return net.fetch(request.url, { bypassCustomProtocolHandlers: true })
     })
   })
-  await app.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   const page = await app.firstWindow()
-  page.on('pageerror', (error) => console.error('PAGE ERROR', String(error)))
-  page.on('requestfailed', (request) => console.error('REQUEST FAILED', request.url(), request.failure()?.errorText))
   page.setDefaultTimeout(15000)
   const captureErrors = []
   page.on('console', (message) => {
     if (message.type() === 'error' && message.text().includes('Failed to capture Simple Browser page')) captureErrors.push(message.text())
     if (message.type() === 'error') console.error('APP ERROR', message.text())
   })
-  await expect(page.locator('#Workbench')).toBeVisible({ timeout: 60000 })
+  await expect(page.locator('#Workbench')).toBeVisible({ timeout: 15000 })
 
   await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
   await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
@@ -227,34 +228,47 @@ try {
     }
     await expect(page.locator('.SimpleBrowserTab')).toHaveCount(iteration + 2)
     await expect(address).toHaveValue('')
+    // Empty tabs deliberately have no native view. Load a page before testing
+    // snapshot recovery and preservation of that page's native view during search.
+    const searchSource = `${url}?search-source=${iteration}`
+    await address.fill(searchSource)
+    await address.press('Enter')
+    await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Local article')
+    await expect
+      .poll(() => app.evaluate(({ webContents }, target) => webContents.getAllWebContents().some((item) => item.getURL() === target), searchSource))
+      .toBe(true)
     const failure = iteration === 18 ? 'UnknownVizError' : iteration === 19 ? 'Current display surface not available for capture' : ''
     assert.deepEqual(captureErrors, [], 'Earlier searches must not report capture failures')
-    const guestId = await app.evaluate(({ webContents }, failure) => {
-      const guest = webContents.getAllWebContents().sort((a, b) => b.id - a.id)[0]
-      globalThis.searchFixtureSessions ||= new WeakSet()
-      if (!globalThis.searchFixtureSessions.has(guest.session)) {
-        globalThis.searchFixtureSessions.add(guest.session)
-        guest.session.protocol.handle('https', async (request) => {
-          if (request.url.startsWith('https://suggestqueries.google.com/')) {
-            return new Response(JSON.stringify(['mdn', ['mdn web docs']]), { headers: { 'Content-Type': 'application/json' } })
-          }
-          return new Response('<!doctype html><title>MDN search fixture</title><h1>MDN search results</h1>', {
-            headers: { 'Content-Type': 'text/html' },
+    const guestId = await app.evaluate(
+      ({ webContents }, { failure, searchSource }) => {
+        const guest = webContents.getAllWebContents().find((item) => item.getURL() === searchSource)
+        if (!guest) throw new Error('Expected the selected tab native page before capture recovery')
+        globalThis.searchFixtureSessions ||= new WeakSet()
+        if (!globalThis.searchFixtureSessions.has(guest.session)) {
+          globalThis.searchFixtureSessions.add(guest.session)
+          guest.session.protocol.handle('https', async (request) => {
+            if (request.url.startsWith('https://suggestqueries.google.com/')) {
+              return new Response(JSON.stringify(['mdn', ['mdn web docs']]), { headers: { 'Content-Type': 'application/json' } })
+            }
+            return new Response('<!doctype html><title>MDN search fixture</title><h1>MDN search results</h1>', {
+              headers: { 'Content-Type': 'text/html' },
+            })
           })
-        })
-      }
-      const capture = guest.capturePage.bind(guest)
-      globalThis.searchCaptureAttempts = 0
-      globalThis.restoreSearchCapture = () => {
-        guest.capturePage = capture
-      }
-      guest.capturePage = async (...args) => {
-        globalThis.searchCaptureAttempts++
-        if (failure && (failure !== 'UnknownVizError' || globalThis.searchCaptureAttempts === 1)) throw new Error(failure)
-        return capture(...args)
-      }
-      return guest.id
-    }, failure)
+        }
+        const capture = guest.capturePage.bind(guest)
+        globalThis.searchCaptureAttempts = 0
+        globalThis.restoreSearchCapture = () => {
+          guest.capturePage = capture
+        }
+        guest.capturePage = async (...args) => {
+          globalThis.searchCaptureAttempts++
+          if (failure && (failure !== 'UnknownVizError' || globalThis.searchCaptureAttempts === 1)) throw new Error(failure)
+          return capture(...args)
+        }
+        return guest.id
+      },
+      { failure, searchSource },
+    )
     try {
       await address.fill('mdn')
       if (failure) await expect.poll(() => app.evaluate(() => globalThis.searchCaptureAttempts)).toBeGreaterThanOrEqual(2)
@@ -316,7 +330,22 @@ try {
   await expect(snapshot).toHaveCount(0)
   await expect.poll(articleVisible).toBe(true)
   assert.equal(await articleToken(), token, 'Dismissing the tab menu must restore the same page')
-  await page.getByRole('button', { name: 'New Tab', exact: true }).click()
+  // Materialize native new-tab fixtures explicitly; ordinary new tabs remain lightweight.
+  const createNativeNewTab = async () => {
+    const count = await page.locator('.SimpleBrowserTab').count()
+    await address.focus()
+    await page.keyboard.press('Control+Alt+5')
+    await expect(page.locator('.SimpleBrowserTab')).toHaveCount(count + 1)
+    await app.evaluate(
+      async ({ webContents }, newTabUrl) => {
+        const empty = webContents.getAllWebContents().find((item) => !item.getURL())
+        if (!empty) throw new Error('Expected an allocated, unloaded native tab')
+        await empty.loadURL(newTabUrl)
+      },
+      getNewTabUrl('', true, 'light'),
+    )
+  }
+  await createNativeNewTab()
   await expect(address).toHaveValue('')
   const newTabStyles = () =>
     app.evaluate(async ({ webContents }) => {
@@ -425,8 +454,8 @@ try {
   await address.press('Escape')
   await expect(suggestions).toHaveCount(0)
 
-  // Switching settings updates both the visible and a background new-tab page.
-  await page.getByRole('button', { name: 'New Tab', exact: true }).click()
+  // Switching settings updates both the visible and a background native new-tab page.
+  await createNativeNewTab()
   await expect.poll(newTabStyles).toEqual([lightStyle, lightStyle])
   await address.focus()
   await page.keyboard.press('Control+Alt+1')
@@ -480,17 +509,6 @@ try {
   console.log('Closed tabs reopen from address-bar and native web-page shortcuts')
   console.log('History suggestions preserve the toolbar and typing; visible and background new-tab pages follow the browser theme')
 } finally {
-  if (app) {
-    await mkdir('.diagnostics', { recursive: true })
-    const pages = await app.windows()
-    for (let index = 0; index < pages.length; index++) {
-      try {
-        const data = await pages[index].evaluate(() => ({ url: location.href, capture: globalThis.__browserCapture, html: document.body?.innerHTML }))
-        await writeFile('.diagnostics/address-' + index + '.json', JSON.stringify(data))
-      } catch (error) { console.error('CAPTURE ERROR', String(error)) }
-    }
-    await app.context().tracing.stop({ path: '.diagnostics/address.zip' })
-  }
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await new Promise((resolveClose) => server.close(resolveClose))
