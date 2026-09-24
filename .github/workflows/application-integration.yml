@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: lvce-editor/lvce-editor
-          ref: 2d3480e2d3134f251e26716724da213516a28029
+          ref: f8d73e8735e7b36c0f326560fe3d80ca85a9dfed
           path: .fixtures/lvce-editor
       - uses: actions/setup-node@v6
         with:
@@ -36,9 +36,6 @@ jobs:
       - name: Install application fixture
         working-directory: .fixtures/lvce-editor
         run: node packages/build/src/parts/InstallDependencies/InstallDependencies.ts
-      # Keep the legacy application layout while including the queued-focus fix.
-      - name: Install renderer focus ownership fix
-        run: npm install --prefix .fixtures/renderer-release --no-package-lock --ignore-scripts --no-audit --no-fund @lvce-editor/renderer-process@30.64.2 @lvce-editor/embeds-worker@4.19.3
       - name: Build this Simple Browser revision
         run: |
           npm ci
