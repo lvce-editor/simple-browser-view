@@ -16,3 +16,12 @@ const rendererDestination = await realpath(join(root, 'packages/renderer-worker/
 await rm(rendererDestination, { recursive: true, force: true })
 await cp(rendererPackage, rendererDestination, { recursive: true })
 console.log('Installed published renderer-process 30.64.2 without changing other fixture dependencies')
+
+// The pinned fixture root lockfile predates the main-process event connection migration.
+const embedsPackage = new URL('../../../.fixtures/renderer-release/node_modules/@lvce-editor/embeds-worker/', import.meta.url)
+const embedsManifest = JSON.parse(await readFile(new URL('package.json', embedsPackage), 'utf8'))
+if (embedsManifest.version !== '4.19.3') throw new Error('Expected published embeds-worker 4.19.3')
+const embedsDestination = await realpath(join(root, 'packages/renderer-worker/node_modules/@lvce-editor/embeds-worker'))
+await rm(embedsDestination, { recursive: true, force: true })
+await cp(embedsPackage, embedsDestination, { recursive: true })
+console.log('Installed published embeds-worker 4.19.3 with the main-process event connection')
