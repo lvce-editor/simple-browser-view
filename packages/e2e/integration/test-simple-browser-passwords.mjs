@@ -144,6 +144,14 @@ if (!process.env.PASSWORD_TEST_PROFILE) {
     await address.evaluate((input) => input.form.requestSubmit())
     await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Password fixture')
     await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
+    await expect
+      .poll(() =>
+        app.evaluate(
+          ({ webContents }, expected) => webContents.getAllWebContents().some((contents) => contents.getURL() === expected && !contents.isLoading()),
+          url,
+        ),
+      )
+      .toBe(true)
   }
   const guest = (code) =>
     app.evaluate(
