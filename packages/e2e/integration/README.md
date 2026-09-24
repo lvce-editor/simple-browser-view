@@ -1,6 +1,6 @@
 # Simple Browser application integration
 
-These scenarios were migrated from `lvce-editor/lvce-editor/scripts/test-simple-browser-*.mjs`. The application-integration workflow runs the tests from this repository against a pinned LVCE source fixture (`bdced7300797e094bb48b9ae37ad902766a19881`, including native focus, context-menu, and worker platform fixes). The fixture supplies the renderer implementation, Electron and build dependencies. CI builds this repository’s current revision and installs its worker bundle into the fixture before testing.
+These scenarios were migrated from `lvce-editor/lvce-editor/scripts/test-simple-browser-*.mjs`. The application-integration workflow runs the tests from this repository against a pinned LVCE source fixture (`5e605e983aeec884c7c6fad6324a264de9413aa0`, including native focus, context-menu, and worker platform fixes). The fixture supplies the renderer implementation, Electron and build dependencies. CI builds this repository’s current revision and installs its worker bundle into the fixture before testing.
 
 Tab overflow and new-tab suggestions run on Linux, macOS and Windows. Native ownership, visibility, restoration, suggestions, themes, workflows and workspace transitions run under Xvfb on Linux. Each native scenario owns all four XDG directories and a Chromium profile. Original scenario assertions are retained, including a complete Electron restart and native compositor visibility checks.
 
