@@ -166,3 +166,28 @@ jobs:
           if test -f "$RUNNER_TEMP/weston.pid"; then
             kill -- "-$(cat "$RUNNER_TEMP/weston.pid")" 2>/dev/null || true
           fi
+
+  workspace-reproduction:
+    strategy:
+      fail-fast: false
+      matrix:
+        attempt: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: '.nvmrc'
+      - run: npm ci
+      - name: Electron workspace reproduction
+        working-directory: ./packages/e2e
+        run: xvfb-run -a npm run e2e:electron -- --filter=simple-browser.workspace-reveal-pane
+      - name: Upload workspace traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-workspace-${{ matrix.attempt }}
+          include-hidden-files: true
+          path: packages/e2e/.test-with-playwright/artifacts
+          if-no-files-found: warn
