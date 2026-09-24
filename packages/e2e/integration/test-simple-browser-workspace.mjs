@@ -27,80 +27,6 @@ await build({
   platform: 'browser',
   external: ['node:*', '/static/*', 'electron'],
   logLevel: 'error',
-  plugins: [
-    {
-      name: 'navigation-diagnosis',
-      setup(build) {
-        build.onLoad({ filter: /RequestAnimationFrame\.js$/ }, async ({ path }) => {
-          let contents = await readFile(path, 'utf8')
-          contents = contents.replace(
-            'globalThis.requestAnimationFrame(fn)',
-            '(() => { console.log("STARTUP raf request",performance.now()); return globalThis.requestAnimationFrame((t)=>{ console.log("STARTUP raf callback",t,performance.now());fn(t) }) })()',
-          )
-          return { contents, loader: 'js' }
-        })
-        build.onLoad({ filter: /ViewletManager\.js$/ }, async ({ path }) => {
-          let contents = await readFile(path, 'utf8')
-          contents = contents.replace(
-            'const result = await fn(oldState, ...args)',
-            'console.log("STARTUP command begin", id, key); const result = await fn(oldState, ...args); console.log("STARTUP command end",id,key,ViewletStates.getByUid(id) === instance)',
-          )
-          for (const statement of [
-            'await ViewletManagerVisitor.loadInstance(viewlet.id, module)',
-            "await Command.execute('Layout.handleBadgeCountChange')",
-            'const additionalExtraCommands = await module.contentLoaded(newState)',
-          ]) {
-            contents = contents.replace(
-              statement,
-              'console.log("STARTUP load begin", viewlet.id, ' +
-                JSON.stringify(statement) +
-                '); ' +
-                statement +
-                '; console.log("STARTUP load end",viewlet.id,' +
-                JSON.stringify(statement) +
-                ')',
-            )
-          }
-          return { contents, loader: 'js' }
-        })
-        build.onLoad({ filter: /CreateWorkerViewlet\.js$/ }, async ({ path }) => {
-          let contents = await readFile(path, 'utf8')
-          contents = contents.replace(
-            'return await worker.invoke(method.name, ...parameters)',
-            'console.log("STARTUP begin", method.name, parameters[0]); const value = await worker.invoke(method.name, ...parameters); console.log("STARTUP end", method.name, parameters[0]); return value',
-          )
-          return { contents, loader: 'js' }
-        })
-        build.onLoad({ filter: /TitleBarMenuOverlay\.js$/ }, async ({ path }) => {
-          let contents = await readFile(path, 'utf8')
-          contents = contents.replace(
-            "const componentState = await TitleBarWorker.invoke('TitleBar.getComponentState', state.uid)",
-            "console.log('STARTUP reconcile begin',state.uid); const componentState = await TitleBarWorker.invoke('TitleBar.getComponentState', state.uid); console.log('STARTUP reconcile end',state.uid)",
-          )
-          return { contents, loader: 'js' }
-        })
-
-        build.onLoad({ filter: /ViewletSimpleBrowser\.js$/ }, async ({ path }) => {
-          let contents = await readFile(path, 'utf8')
-          contents = contents.replace(
-            'if (currentUrl && currentUrl !== url) return state',
-            'console.log("NAVIGATION stats", JSON.stringify({url,currentUrl,isFocused,focus:FocusState.get(),focusedUid:ViewletStates.getFocusedInstanceByType(ViewletModuleId.SimpleBrowser),uid:state.uid})); if (currentUrl && currentUrl !== url) return state',
-          )
-          for (const name of ['handleDidNavigate', 'handleWillNavigate']) {
-            contents = contents.replace(
-              'export const ' + name + ' = ' + (name === 'handleDidNavigate' ? 'async ' : '') + '(state, browserViewId, value) => {',
-              (match) =>
-                match +
-                '\n console.log("NAVIGATION", ' +
-                JSON.stringify(name) +
-                ', JSON.stringify({browserViewId,value,input:state.inputValue,src:state.iframeSrc,loading:state.isLoading,focus:FocusState.get()}));',
-            )
-          }
-          return { contents, loader: 'js' }
-        })
-      },
-    },
-  ],
 })
 const fixtureImage = await readFile(join(root, 'packages/build/files/icon.png'))
 const server = createServer((_request, response) => {
@@ -118,11 +44,7 @@ await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
 try {
-  await writeFile(
-    rendererPath,
-    "(() => {\n const entries=[]; let dropped=0;\n globalThis.__browserCapture={entries,get dropped(){return dropped}};\n const record=(kind,data)=>{if(entries.length>=12000){dropped++;return}try{let raw=JSON.stringify(data,(_k,v)=>v instanceof MessagePort?'[MessagePort]':v);entries.push({seq:entries.length,time:performance.now(),kind,data:raw.length>50000?{truncated:true,text:raw.slice(0,50000)}:JSON.parse(raw)})}catch{}};\n const add=EventTarget.prototype.addEventListener;const seen=new WeakSet();\n EventTarget.prototype.addEventListener=function(type,fn,options){if(type==='message'&&!seen.has(this)){seen.add(this);add.call(this,type,e=>record('receive',e.data))}return add.call(this,type,fn,options)};\n const post=MessagePort.prototype.postMessage;MessagePort.prototype.postMessage=function(data,...args){record('send',data);return post.call(this,data,...args)};\n for(const type of ['input','submit','keydown','focusin','focusout']) add.call(document,type,e=>{const t=e.target;record(type,{key:e.key,name:t.name,value:t.value,start:t.selectionStart,end:t.selectionEnd,active:document.activeElement?.name,focused:document.hasFocus()})},true);\n add.call(window,'error',e=>record('error',{message:e.message}));add.call(window,'unhandledrejection',e=>record('rejection',{message:String(e.reason)}));\n record('renderer-start',{url:location.href});\n})();\n" +
-      rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl),
-  )
+  await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
   delete env.ELECTRON_RUN_AS_NODE
   for (const key of ['CONFIG', 'DATA', 'STATE', 'CACHE']) env[`XDG_${key}_HOME`] = join(profile, key.toLowerCase())
@@ -150,13 +72,7 @@ try {
       return new Response(JSON.stringify([query, [query + ' result']]), { headers: { 'Content-Type': 'application/json' } })
     })
   })
-  app.process().stderr.on('data', (data) => console.error('ELECTRON STDERR', String(data)))
   const page = await app.firstWindow()
-  page.on('console', (message) => {
-    if (/^(NAVIGATION|STARTUP)/.test(message.text())) console.log(message.text())
-  })
-  page.on('pageerror', (error) => console.error('PAGE ERROR', String(error)))
-  page.on('requestfailed', (request) => console.error('REQUEST FAILED', request.url(), request.failure()?.errorText))
   page.setDefaultTimeout(15000)
   page.on('console', (message) => {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
@@ -193,13 +109,6 @@ try {
   await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.click()
   await expect(address).toBeFocused()
-  console.log(
-    'STAGE navigate',
-    await page.evaluate(() => ({
-      address: document.querySelector('[name="simple-browser-address"]')?.value,
-      history: location.protocol === 'data:' ? null : localStorage.getItem('simple-browser-history'),
-    })),
-  )
   await address.fill(url)
   await address.press('Enter')
   const guestSnapshot = (targetId) =>
@@ -240,21 +149,7 @@ try {
     )
     .toBe(true)
   await expect(address).toBeFocused()
-  console.log(
-    'STAGE preserved',
-    await page.evaluate(() => ({
-      address: document.querySelector('[name="simple-browser-address"]')?.value,
-      history: location.protocol === 'data:' ? null : localStorage.getItem('simple-browser-history'),
-    })),
-  )
   await expect(address).toHaveValue(focusedAddress)
-  console.log(
-    'STAGE navigate',
-    await page.evaluate(() => ({
-      address: document.querySelector('[name="simple-browser-address"]')?.value,
-      history: location.protocol === 'data:' ? null : localStorage.getItem('simple-browser-history'),
-    })),
-  )
   await address.fill(url)
   await address.press('Enter')
   await expect
@@ -266,13 +161,6 @@ try {
       ),
     )
     .toBe(true)
-  console.log(
-    'STAGE before-draft',
-    await page.evaluate(() => ({
-      address: document.querySelector('[name="simple-browser-address"]')?.value,
-      history: location.protocol === 'data:' ? null : localStorage.getItem('simple-browser-history'),
-    })),
-  )
   await app.evaluate(async ({ webContents }, targetId) => {
     const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
     await guest.executeJavaScript(
@@ -288,13 +176,6 @@ try {
   }, focusedGuest.id)
   await expect(address).toBeFocused()
   await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([0, url.length])
-  console.log(
-    'STAGE after-focus',
-    await page.evaluate(() => ({
-      address: document.querySelector('[name="simple-browser-address"]')?.value,
-      history: location.protocol === 'data:' ? null : localStorage.getItem('simple-browser-history'),
-    })),
-  )
   try {
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.focus())
     await address.focus()
@@ -822,43 +703,6 @@ try {
     }),
   )
 } finally {
-  try {
-    await mkdir('.diagnostics', { recursive: true })
-    await writeFile(
-      '.diagnostics/workspace-native-windows.json',
-      JSON.stringify(
-        await app?.evaluate(({ BrowserWindow }) =>
-          BrowserWindow.getAllWindows().map((window) => ({
-            id: window.id,
-            bounds: window.getBounds(),
-            visible: window.isVisible(),
-            focused: window.isFocused(),
-            minimized: window.isMinimized(),
-            url: window.webContents.getURL(),
-            contentsFocused: window.webContents.isFocused(),
-            backgroundThrottling: window.webContents.getBackgroundThrottling(),
-          })),
-        ),
-      ),
-    )
-    for (const [index, window] of ((await app?.windows()) || []).entries()) {
-      await writeFile(
-        '.diagnostics/workspace-' + index + '.json',
-        JSON.stringify(
-          await window.evaluate(() => ({
-            url: location.href,
-            html: document.body.innerHTML,
-            capture: globalThis.__browserCapture,
-            history: location.protocol === 'data:' ? null : localStorage.getItem('simple-browser-history'),
-          })),
-        ),
-      )
-      await window.screenshot({ path: '.diagnostics/workspace-' + index + '.png' })
-    }
-  } catch (error) {
-    console.error('CAPTURE ERROR', String(error))
-  }
-
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await rm(profile, { recursive: true, force: true })
