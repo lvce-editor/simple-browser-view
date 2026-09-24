@@ -31,6 +31,23 @@ await build({
     {
       name: 'navigation-diagnosis',
       setup(build) {
+        build.onLoad({ filter: /CreateWorkerViewlet\.js$/ }, async ({ path }) => {
+          let contents = await readFile(path, 'utf8')
+          contents = contents.replace(
+            'return await worker.invoke(method.name, ...parameters)',
+            'console.log("STARTUP begin", method.name, parameters[0]); const value = await worker.invoke(method.name, ...parameters); console.log("STARTUP end", method.name, parameters[0]); return value',
+          )
+          return { contents, loader: 'js' }
+        })
+        build.onLoad({ filter: /TitleBarMenuOverlay\.js$/ }, async ({ path }) => {
+          let contents = await readFile(path, 'utf8')
+          contents = contents.replace(
+            "const componentState = await TitleBarWorker.invoke('TitleBar.getComponentState', state.uid)",
+            "console.log('STARTUP reconcile begin',state.uid); const componentState = await TitleBarWorker.invoke('TitleBar.getComponentState', state.uid); console.log('STARTUP reconcile end',state.uid)",
+          )
+          return { contents, loader: 'js' }
+        })
+
         build.onLoad({ filter: /ViewletSimpleBrowser\.js$/ }, async ({ path }) => {
           let contents = await readFile(path, 'utf8')
           for (const name of ['handleDidNavigate', 'handleWillNavigate']) {
@@ -100,7 +117,7 @@ try {
   app.process().stderr.on('data', (data) => console.error('ELECTRON STDERR', String(data)))
   const page = await app.firstWindow()
   page.on('console', (message) => {
-    if (message.text().startsWith('NAVIGATION')) console.log(message.text())
+    if (/^(NAVIGATION|STARTUP)/.test(message.text())) console.log(message.text())
   })
   page.on('pageerror', (error) => console.error('PAGE ERROR', String(error)))
   page.on('requestfailed', (request) => console.error('REQUEST FAILED', request.url(), request.failure()?.errorText))
