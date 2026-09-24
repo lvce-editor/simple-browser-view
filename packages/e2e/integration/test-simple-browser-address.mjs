@@ -56,7 +56,7 @@ await build({
           let contents = await readFile(path, 'utf8')
           contents = contents.replace(
             'globalThis.requestAnimationFrame(fn)',
-            'console.log("STARTUP raf request",performance.now()); globalThis.requestAnimationFrame((t)=>{ console.log("STARTUP raf callback",t,performance.now());fn(t) })',
+            '(() => { console.log("STARTUP raf request",performance.now()); return globalThis.requestAnimationFrame((t)=>{ console.log("STARTUP raf callback",t,performance.now());fn(t) }) })()',
           )
           return { contents, loader: 'js' }
         })

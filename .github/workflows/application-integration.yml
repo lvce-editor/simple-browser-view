@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           repository: lvce-editor/lvce-editor
-          ref: a015b04a22f15eaa74a5fa8f446365fee2603557
+          ref: 4bd54a713f91f9b86b23687fe6234e9fce3864ab
           path: .fixtures/lvce-editor
       - uses: actions/setup-node@v6
         with:

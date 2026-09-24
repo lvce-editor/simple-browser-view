@@ -35,7 +35,7 @@ await build({
           let contents = await readFile(path, 'utf8')
           contents = contents.replace(
             'globalThis.requestAnimationFrame(fn)',
-            'console.log("STARTUP raf request",performance.now()); globalThis.requestAnimationFrame((t)=>{ console.log("STARTUP raf callback",t,performance.now());fn(t) })',
+            '(() => { console.log("STARTUP raf request",performance.now()); return globalThis.requestAnimationFrame((t)=>{ console.log("STARTUP raf callback",t,performance.now());fn(t) }) })()',
           )
           return { contents, loader: 'js' }
         })
@@ -178,6 +178,9 @@ try {
   await page.keyboard.press('Control+c')
   await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toContain('second line')
   const selectedEditorText = await app.evaluate(({ clipboard }) => clipboard.readText())
+  const cdp = await page.context().newCDPSession(page)
+  // Playwright's focus emulation suppresses native WebContentsView blur events.
+  await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: false })
   await runCommand('Simple Browser: Toggle Full Width')
   await expect(page.locator('.BrowserFullWidth')).toBeVisible()
   const address = page.locator('[name="simple-browser-address"]')
@@ -285,9 +288,6 @@ try {
       history: location.protocol === 'data:' ? null : localStorage.getItem('simple-browser-history'),
     })),
   )
-  const cdp = await page.context().newCDPSession(page)
-  // Playwright's focus emulation suppresses native WebContentsView blur events.
-  await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: false })
   try {
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.focus())
     await address.focus()
