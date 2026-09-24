@@ -31,6 +31,30 @@ await build({
     {
       name: 'navigation-diagnosis',
       setup(build) {
+        build.onLoad({ filter: /ViewletManager\.js$/ }, async ({ path }) => {
+          let contents = await readFile(path, 'utf8')
+          contents = contents.replace(
+            'const result = await fn(oldState, ...args)',
+            'console.log("STARTUP command begin", id, key); const result = await fn(oldState, ...args); console.log("STARTUP command end",id,key,ViewletStates.getByUid(id) === instance)',
+          )
+          for (const statement of [
+            'await ViewletManagerVisitor.loadInstance(viewlet.id, module)',
+            "await Command.execute('Layout.handleBadgeCountChange')",
+            'const additionalExtraCommands = await module.contentLoaded(newState)',
+          ]) {
+            contents = contents.replace(
+              statement,
+              'console.log("STARTUP load begin", viewlet.id, ' +
+                JSON.stringify(statement) +
+                '); ' +
+                statement +
+                '; console.log("STARTUP load end",viewlet.id,' +
+                JSON.stringify(statement) +
+                ')',
+            )
+          }
+          return { contents, loader: 'js' }
+        })
         build.onLoad({ filter: /CreateWorkerViewlet\.js$/ }, async ({ path }) => {
           let contents = await readFile(path, 'utf8')
           contents = contents.replace(
