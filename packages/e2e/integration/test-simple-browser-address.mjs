@@ -84,6 +84,11 @@ try {
     })
   })
   const page = await app.firstWindow()
+  // Xvfb can throttle animation frames even in a visible, focused window.
+  // Keep compositor-driven actionability checks live in this isolated test app.
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) window.webContents.setBackgroundThrottling(false)
+  })
   // Activate the native window before Playwright waits for compositor-driven stability.
   await page.bringToFront()
   page.setDefaultTimeout(15000)
@@ -95,50 +100,7 @@ try {
   await expect(page.locator('#Workbench')).toBeVisible({ timeout: 15000 })
 
   await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
-  await page.evaluate(() => {
-    globalThis.startupFrame = { requested: performance.now(), delivered: null }
-    requestAnimationFrame(() => {
-      globalThis.startupFrame.delivered = performance.now()
-    })
-  })
-  try {
-    await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
-  } catch (error) {
-    console.error(
-      'STARTUP WINDOW',
-      JSON.stringify(
-        await app.evaluate(({ BrowserWindow }) =>
-          BrowserWindow.getAllWindows().map((window) => ({
-            id: window.id,
-            visible: window.isVisible(),
-            focused: window.isFocused(),
-            minimized: window.isMinimized(),
-            bounds: window.getBounds(),
-            contentsFocused: window.webContents.isFocused(),
-            loading: window.webContents.isLoading(),
-            backgroundThrottling: window.webContents.getBackgroundThrottling(),
-            url: window.webContents.getURL(),
-          })),
-        ),
-      ),
-    )
-    console.error(
-      'STARTUP PAGE',
-      JSON.stringify(
-        await page.evaluate(() => ({
-          frame: globalThis.startupFrame,
-          visibility: document.visibilityState,
-          hidden: document.hidden,
-          focused: document.hasFocus(),
-          readyState: document.readyState,
-          width: innerWidth,
-          height: innerHeight,
-          time: performance.now(),
-        })),
-      ),
-    )
-    throw error
-  }
+  await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
   await expect(page.locator('[name="editor"]')).toBeAttached()
   await page.evaluate(() => {
     localStorage.setItem('simple-browser-search-history', JSON.stringify(['known first', 'known second', 'offline local']))

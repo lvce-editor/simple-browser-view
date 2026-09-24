@@ -73,6 +73,11 @@ try {
     })
   })
   const page = await app.firstWindow()
+  // Xvfb can throttle animation frames even in a visible, focused window.
+  // Keep compositor-driven actionability checks live in this isolated test app.
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) window.webContents.setBackgroundThrottling(false)
+  })
   // Activate the native window before Playwright waits for compositor-driven stability.
   await page.bringToFront()
   page.setDefaultTimeout(15000)
@@ -89,50 +94,7 @@ try {
     await expect(page.getByRole('option', { name: label, exact: true })).toBeVisible()
     await input.press('Enter')
   }
-  await page.evaluate(() => {
-    globalThis.startupFrame = { requested: performance.now(), delivered: null }
-    requestAnimationFrame(() => {
-      globalThis.startupFrame.delivered = performance.now()
-    })
-  })
-  try {
-    await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
-  } catch (error) {
-    console.error(
-      'STARTUP WINDOW',
-      JSON.stringify(
-        await app.evaluate(({ BrowserWindow }) =>
-          BrowserWindow.getAllWindows().map((window) => ({
-            id: window.id,
-            visible: window.isVisible(),
-            focused: window.isFocused(),
-            minimized: window.isMinimized(),
-            bounds: window.getBounds(),
-            contentsFocused: window.webContents.isFocused(),
-            loading: window.webContents.isLoading(),
-            backgroundThrottling: window.webContents.getBackgroundThrottling(),
-            url: window.webContents.getURL(),
-          })),
-        ),
-      ),
-    )
-    console.error(
-      'STARTUP PAGE',
-      JSON.stringify(
-        await page.evaluate(() => ({
-          frame: globalThis.startupFrame,
-          visibility: document.visibilityState,
-          hidden: document.hidden,
-          focused: document.hasFocus(),
-          readyState: document.readyState,
-          width: innerWidth,
-          height: innerHeight,
-          time: performance.now(),
-        })),
-      ),
-    )
-    throw error
-  }
+  await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
   await expect(page.locator('[name="editor"]')).toBeAttached()
   await page.locator('[name="editor"]').focus()
   await page.evaluate(() => {
