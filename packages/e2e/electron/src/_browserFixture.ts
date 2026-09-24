@@ -68,8 +68,6 @@ export const start = async (
 ): Promise<BrowserFixture> => {
   const artifactDirectory = join(process.cwd(), '.test-with-playwright', 'artifacts')
   await mkdir(artifactDirectory, { recursive: true })
-  if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut'))
-    process.stdout.write('NATIVE-STAGE await context.page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })\n')
   await context.page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   let server: TestServer.TestServer | undefined
   const errors: string[] = []
@@ -80,19 +78,14 @@ export const start = async (
   const close = async (): Promise<void> => {
     try {
       await writeFile(join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.errors.json`), JSON.stringify(errors))
-      if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut'))
-        process.stdout.write('NATIVE-STAGE await context.page.context().tracing.stop({ path: join(artifactDirectory, ${process.env.SIMPLE_BROWS\n')
       await context.page.context().tracing.stop({ path: join(artifactDirectory, `${process.env.SIMPLE_BROWSER_TEST_NAME || 'browser'}.zip`) })
     } finally {
       context.page.off('pageerror', onPageError)
-      if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut')) process.stdout.write('NATIVE-STAGE await server?.close()\n')
       await server?.close()
     }
   }
   try {
     await context.expect.poll(() => context.electronApp.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].isVisible())).toBe(true)
-    if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut'))
-      process.stdout.write('NATIVE-STAGE await reset(context, preferences)\n')
     await reset(context, preferences)
     const requests: string[] = []
     server = await TestServer.start((request, response) => {
@@ -112,12 +105,8 @@ export const start = async (
     await context.page.evaluate((values) => {
       for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
     }, storage)
-    if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut'))
-      process.stdout.write('NATIVE-STAGE await SimpleBrowser.show(context.page)\n')
     await SimpleBrowser.show(context.page)
     const activeServer = server
-    if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut'))
-      process.stdout.write('NATIVE-STAGE const guest = await SimpleBrowser.openUrl(context.page, ${server.url}/one)\n')
     const guest = await SimpleBrowser.openUrl(context.page, `${server.url}/one`)
     const browser = context.page.locator('.SimpleBrowser').last()
     return {
