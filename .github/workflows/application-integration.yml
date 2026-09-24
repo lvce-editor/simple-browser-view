@@ -58,20 +58,26 @@ jobs:
         working-directory: .fixtures/lvce-editor
         run: node packages/main-process/node_modules/electron/install.js
       - name: address
+        timeout-minutes: 5
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs
       - name: restore
+        timeout-minutes: 5
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-restore.mjs
       - name: native-lifecycle
+        timeout-minutes: 5
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-native-lifecycle.mjs
       - name: workflows
+        timeout-minutes: 5
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workflows.mjs
       - name: workspace
+        timeout-minutes: 5
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs
       - name: History preview tab
+        timeout-minutes: 5
         if: ${{ !cancelled() && runner.os == 'Linux' && steps.chromium.outcome == 'success' }}
         run: xvfb-run -a node packages/e2e/integration/test-simple-browser-history.mjs

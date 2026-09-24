@@ -167,68 +167,33 @@ jobs:
             kill -- "-$(cat "$RUNNER_TEMP/weston.pid")" 2>/dev/null || true
           fi
 
-  address-reproduction:
+  native-shortcut-reproduction:
     strategy:
       fail-fast: false
       max-parallel: 4
       matrix:
-        os: [ubuntu-24.04]
         attempt: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    env:
-      LVCE_SOURCE_ROOT: ${{ github.workspace }}/.fixtures/lvce-editor
-      PLAYWRIGHT_BROWSERS_PATH: 0
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
-      - name: Checkout application fixture
-        uses: actions/checkout@v7
-        with:
-          repository: lvce-editor/lvce-editor
-          ref: 5e605e983aeec884c7c6fad6324a264de9413aa0
-          path: .fixtures/lvce-editor
       - uses: actions/setup-node@v6
         with:
-          node-version-file: .fixtures/lvce-editor/.nvmrc
-      - uses: actions/setup-python@v6
+          node-version-file: .nvmrc
+      - run: npm ci
+      - run: npm run build
+      - uses: actions/cache@v4
         with:
-          python-version: '3.11'
-      - uses: actions/cache@v6
-        with:
-          path: .fixtures/lvce-editor/**/node_modules
-          key: ${{ runner.os }}-browser-integration-${{ hashFiles('.fixtures/lvce-editor/**/package-lock.json') }}
-      - name: Install application fixture
-        working-directory: .fixtures/lvce-editor
-        run: node packages/build/src/parts/InstallDependencies/InstallDependencies.ts
-      - name: Build this Simple Browser revision
-        run: |
-          npm ci
-          npm run build
-      - name: Install this Simple Browser revision into the fixture
-        run: node packages/e2e/integration/install-fixture.mjs
-      - name: Install Chromium
-        id: chromium
-        working-directory: .fixtures/lvce-editor/packages/extension-host-worker-tests
-        run: npx playwright install chromium
-      - name: Install Electron
-        id: electron
-        working-directory: .fixtures/lvce-editor
-        run: node packages/main-process/node_modules/electron/install.js
-      - name: Address diagnosis
-        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-address.mjs
-      - name: Workspace diagnosis
-        if: ${{ !cancelled() && steps.electron.outcome == 'success' }}
-        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workspace.mjs
-      - name: Workflow regression
-        if: ${{ !cancelled() && steps.electron.outcome == 'success' }}
-        run: xvfb-run -a node packages/e2e/integration/test-simple-browser-workflows.mjs
-      - name: Upload browser evidence
+          path: packages/e2e/.test-with-playwright/electron
+          key: ${{ runner.os }}-simple-browser-electron-${{ env.LVCE_ELECTRON_VERSION }}
+      - name: Native shortcut diagnosis
+        working-directory: ./packages/e2e
+        run: xvfb-run -a npm run e2e:electron -- --filter=simple-browser.native-devtools-shortcut
+      - name: Upload native evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: browser-address-${{ matrix.attempt }}
+          name: native-shortcut-${{ matrix.attempt }}
           include-hidden-files: true
-          path: |
-            .fixtures/lvce-editor/.tmp/browser-*-evidence
-            .diagnostics
+          path: packages/e2e/.test-with-playwright/artifacts
           if-no-files-found: warn

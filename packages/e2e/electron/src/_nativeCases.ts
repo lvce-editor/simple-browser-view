@@ -200,6 +200,8 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
 }
 
 export const run = async (context: ElectronTestContext, scenario: string): Promise<void> => {
+  if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut'))
+    process.stdout.write('NATIVE-STAGE const fixture = await Fixture.start(context)\n')
   const fixture = await Fixture.start(context)
   const { electronApp, expect, guest } = fixture
   await electronApp.evaluate(({ webContents }, url) => {
@@ -245,6 +247,8 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
   }
   try {
     if (!cases[scenario]) throw new Error('Unknown browser scenario: ' + scenario)
+    if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut'))
+      process.stdout.write('NATIVE-STAGE await cases[scenario]({ ...fixture, choose, openMenu })\n')
     await cases[scenario]({ ...fixture, choose, openMenu })
   } finally {
     await electronApp.evaluate(({ BrowserWindow, Menu, webContents }, url) => {
@@ -254,6 +258,7 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
       guest?.closeDevTools()
       guest?.setZoomLevel(0)
     }, guest.url())
+    if (process.env.SIMPLE_BROWSER_TEST_NAME?.includes('native-devtools-shortcut')) process.stdout.write('NATIVE-STAGE await fixture.close()\n')
     await fixture.close()
   }
 }
