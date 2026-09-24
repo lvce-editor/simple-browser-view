@@ -73,6 +73,8 @@ try {
     })
   })
   const page = await app.firstWindow()
+  // Activate the native window before Playwright waits for compositor-driven stability.
+  await page.bringToFront()
   page.setDefaultTimeout(15000)
   page.on('console', (message) => {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
