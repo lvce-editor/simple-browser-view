@@ -3,6 +3,9 @@ import assert from 'node:assert/strict'
 const { parseKeyBindingString } = await import(
   new URL('packages/renderer-worker/src/parts/ParseKeyBindingString/ParseKeyBindingString.js', fixtureUrl)
 )
+const { getUrl: getNewTabUrl } = await import(
+  new URL('packages/renderer-worker/src/parts/SimpleBrowserNewTabPage/SimpleBrowserNewTabPage.js', fixtureUrl)
+)
 import { createServer } from 'node:http'
 import { createRequire } from 'node:module'
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
@@ -30,6 +33,7 @@ await writeFile(
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+1'), command: 'Preferences.update', args: [{ 'simpleBrowser.chromeTheme': 'inherit' }] },
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+2'), command: 'Preferences.update', args: [{ 'simpleBrowser.chromeTheme': 'light' }] },
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+3'), command: 'Layout.handleSettingsChanged' },
+    { source: 'User', key: parseKeyBindingString('Ctrl+Alt+5'), command: 'SimpleBrowser.createNewTab', args: [true, true] },
     { source: 'User', key: parseKeyBindingString('Ctrl+Alt+4'), command: 'Layout.toggleSimpleBrowserFullWidth' },
   ]),
 )
@@ -80,6 +84,13 @@ try {
     })
   })
   const page = await app.firstWindow()
+  // Xvfb can throttle animation frames even in a visible, focused window.
+  // Keep compositor-driven actionability checks live in this isolated test app.
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) window.webContents.setBackgroundThrottling(false)
+  })
+  // Activate the native window before Playwright waits for compositor-driven stability.
+  await page.bringToFront()
   page.setDefaultTimeout(15000)
   const captureErrors = []
   page.on('console', (message) => {
@@ -87,6 +98,7 @@ try {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
   })
   await expect(page.locator('#Workbench')).toBeVisible({ timeout: 15000 })
+
   await expect(page.getByRole('tree', { name: 'Files Explorer' })).toBeVisible()
   await page.getByRole('treeitem', { name: 'example.txt', exact: true }).dblclick()
   await expect(page.locator('[name="editor"]')).toBeAttached()
@@ -102,7 +114,26 @@ try {
   await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.click()
   await expect(address).toBeFocused()
-  await address.fill(url)
+  // Real keystrokes must retain both text and the browser's native caret.
+  await address.press('Control+a')
+  for (let index = 0; index < url.length; index++) {
+    await address.pressSequentially(url[index])
+    await expect(address).toHaveValue(url.slice(0, index + 1))
+    await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([index + 1, index + 1])
+  }
+  await expect(address).toHaveValue(url)
+  await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([url.length, url.length])
+  await address.press('ArrowLeft')
+  await address.pressSequentially('x')
+  await expect(address).toHaveValue(url.slice(0, -1) + 'x' + url.slice(-1))
+  await address.press('Backspace')
+  await expect(address).toHaveValue(url)
+  await address.press('Shift+ArrowLeft')
+  await address.pressSequentially('z')
+  await expect(address).toHaveValue(url.slice(0, -2) + 'z' + url.slice(-1))
+  await address.press('Control+a')
+  await address.pressSequentially(url)
+  await expect(address).toHaveValue(url)
   // Native submission works before focus-dependent shortcuts arrive.
   await address.evaluate((input) => {
     if (!input.form?.noValidate) throw new Error('The address form must also accept search queries')
@@ -204,34 +235,47 @@ try {
     }
     await expect(page.locator('.SimpleBrowserTab')).toHaveCount(iteration + 2)
     await expect(address).toHaveValue('')
+    // Empty tabs deliberately have no native view. Load a page before testing
+    // snapshot recovery and preservation of that page's native view during search.
+    const searchSource = `${url}?search-source=${iteration}`
+    await address.fill(searchSource)
+    await address.press('Enter')
+    await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Local article')
+    await expect
+      .poll(() => app.evaluate(({ webContents }, target) => webContents.getAllWebContents().some((item) => item.getURL() === target), searchSource))
+      .toBe(true)
     const failure = iteration === 18 ? 'UnknownVizError' : iteration === 19 ? 'Current display surface not available for capture' : ''
     assert.deepEqual(captureErrors, [], 'Earlier searches must not report capture failures')
-    const guestId = await app.evaluate(({ webContents }, failure) => {
-      const guest = webContents.getAllWebContents().sort((a, b) => b.id - a.id)[0]
-      globalThis.searchFixtureSessions ||= new WeakSet()
-      if (!globalThis.searchFixtureSessions.has(guest.session)) {
-        globalThis.searchFixtureSessions.add(guest.session)
-        guest.session.protocol.handle('https', async (request) => {
-          if (request.url.startsWith('https://suggestqueries.google.com/')) {
-            return new Response(JSON.stringify(['mdn', ['mdn web docs']]), { headers: { 'Content-Type': 'application/json' } })
-          }
-          return new Response('<!doctype html><title>MDN search fixture</title><h1>MDN search results</h1>', {
-            headers: { 'Content-Type': 'text/html' },
+    const guestId = await app.evaluate(
+      ({ webContents }, { failure, searchSource }) => {
+        const guest = webContents.getAllWebContents().find((item) => item.getURL() === searchSource)
+        if (!guest) throw new Error('Expected the selected tab native page before capture recovery')
+        globalThis.searchFixtureSessions ||= new WeakSet()
+        if (!globalThis.searchFixtureSessions.has(guest.session)) {
+          globalThis.searchFixtureSessions.add(guest.session)
+          guest.session.protocol.handle('https', async (request) => {
+            if (request.url.startsWith('https://suggestqueries.google.com/')) {
+              return new Response(JSON.stringify(['mdn', ['mdn web docs']]), { headers: { 'Content-Type': 'application/json' } })
+            }
+            return new Response('<!doctype html><title>MDN search fixture</title><h1>MDN search results</h1>', {
+              headers: { 'Content-Type': 'text/html' },
+            })
           })
-        })
-      }
-      const capture = guest.capturePage.bind(guest)
-      globalThis.searchCaptureAttempts = 0
-      globalThis.restoreSearchCapture = () => {
-        guest.capturePage = capture
-      }
-      guest.capturePage = async (...args) => {
-        globalThis.searchCaptureAttempts++
-        if (failure && (failure !== 'UnknownVizError' || globalThis.searchCaptureAttempts === 1)) throw new Error(failure)
-        return capture(...args)
-      }
-      return guest.id
-    }, failure)
+        }
+        const capture = guest.capturePage.bind(guest)
+        globalThis.searchCaptureAttempts = 0
+        globalThis.restoreSearchCapture = () => {
+          guest.capturePage = capture
+        }
+        guest.capturePage = async (...args) => {
+          globalThis.searchCaptureAttempts++
+          if (failure && (failure !== 'UnknownVizError' || globalThis.searchCaptureAttempts === 1)) throw new Error(failure)
+          return capture(...args)
+        }
+        return guest.id
+      },
+      { failure, searchSource },
+    )
     try {
       await address.fill('mdn')
       if (failure) await expect.poll(() => app.evaluate(() => globalThis.searchCaptureAttempts)).toBeGreaterThanOrEqual(2)
@@ -293,7 +337,22 @@ try {
   await expect(snapshot).toHaveCount(0)
   await expect.poll(articleVisible).toBe(true)
   assert.equal(await articleToken(), token, 'Dismissing the tab menu must restore the same page')
-  await page.getByRole('button', { name: 'New Tab', exact: true }).click()
+  // Materialize native new-tab fixtures explicitly; ordinary new tabs remain lightweight.
+  const createNativeNewTab = async () => {
+    const count = await page.locator('.SimpleBrowserTab').count()
+    await address.focus()
+    await page.keyboard.press('Control+Alt+5')
+    await expect(page.locator('.SimpleBrowserTab')).toHaveCount(count + 1)
+    await app.evaluate(
+      async ({ webContents }, newTabUrl) => {
+        const empty = webContents.getAllWebContents().find((item) => !item.getURL())
+        if (!empty) throw new Error('Expected an allocated, unloaded native tab')
+        await empty.loadURL(newTabUrl)
+      },
+      getNewTabUrl('', true, 'light'),
+    )
+  }
+  await createNativeNewTab()
   await expect(address).toHaveValue('')
   const newTabStyles = () =>
     app.evaluate(async ({ webContents }) => {
@@ -402,8 +461,8 @@ try {
   await address.press('Escape')
   await expect(suggestions).toHaveCount(0)
 
-  // Switching settings updates both the visible and a background new-tab page.
-  await page.getByRole('button', { name: 'New Tab', exact: true }).click()
+  // Switching settings updates both the visible and a background native new-tab page.
+  await createNativeNewTab()
   await expect.poll(newTabStyles).toEqual([lightStyle, lightStyle])
   await address.focus()
   await page.keyboard.press('Control+Alt+1')
