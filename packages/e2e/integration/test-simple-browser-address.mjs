@@ -595,6 +595,23 @@ try {
 } finally {
   try {
     await mkdir('.diagnostics', { recursive: true })
+    await writeFile(
+      '.diagnostics/address-native-windows.json',
+      JSON.stringify(
+        await app?.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows().map((window) => ({
+            id: window.id,
+            bounds: window.getBounds(),
+            visible: window.isVisible(),
+            focused: window.isFocused(),
+            minimized: window.isMinimized(),
+            url: window.webContents.getURL(),
+            contentsFocused: window.webContents.isFocused(),
+            backgroundThrottling: window.webContents.getBackgroundThrottling(),
+          })),
+        ),
+      ),
+    )
     for (const [index, window] of ((await app?.windows()) || []).entries()) {
       await writeFile(
         '.diagnostics/address-' + index + '.json',

@@ -223,9 +223,12 @@ try {
   const focusedGuest = await guestSnapshot()
   if (!focusedGuest) throw new Error('Expected the browser page to remain available before focusing the address')
   const focusedAddress = await address.inputValue()
-  // DOM focus alone can be emulated while the native page still owns focus.
+  // CDP clicks target the renderer directly; give its native WebContents focus
+  // as an actual click outside the guest would before testing address ownership.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.focus())
   await address.click()
   await expect(address).toBeFocused()
+  await expect.poll(() => app.evaluate(({ webContents }, targetId) => webContents.fromId(targetId).isFocused(), focusedGuest.id)).toBe(false)
   await app.evaluate(async ({ webContents }, targetId) => {
     const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
     if (!guest) throw new Error(`Expected browser WebContents ${targetId} to remain available while the address is focused`)
@@ -821,6 +824,23 @@ try {
 } finally {
   try {
     await mkdir('.diagnostics', { recursive: true })
+    await writeFile(
+      '.diagnostics/workspace-native-windows.json',
+      JSON.stringify(
+        await app?.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows().map((window) => ({
+            id: window.id,
+            bounds: window.getBounds(),
+            visible: window.isVisible(),
+            focused: window.isFocused(),
+            minimized: window.isMinimized(),
+            url: window.webContents.getURL(),
+            contentsFocused: window.webContents.isFocused(),
+            backgroundThrottling: window.webContents.getBackgroundThrottling(),
+          })),
+        ),
+      ),
+    )
     for (const [index, window] of ((await app?.windows()) || []).entries()) {
       await writeFile(
         '.diagnostics/workspace-' + index + '.json',
