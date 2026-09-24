@@ -226,5 +226,7 @@ jobs:
         with:
           name: browser-address-${{ matrix.attempt }}
           include-hidden-files: true
-          path: .fixtures/lvce-editor/.tmp/browser-*-evidence
+          path: |
+            .fixtures/lvce-editor/.tmp/browser-*-evidence
+            .diagnostics
           if-no-files-found: warn

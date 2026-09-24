@@ -72,7 +72,10 @@ try {
       return new Response(JSON.stringify([query, [query + ' result']]), { headers: { 'Content-Type': 'application/json' } })
     })
   })
+  app.process().stderr.on('data', (data) => console.error('ELECTRON STDERR', String(data)))
   const page = await app.firstWindow()
+  page.on('pageerror', (error) => console.error('PAGE ERROR', String(error)))
+  page.on('requestfailed', (request) => console.error('REQUEST FAILED', request.url(), request.failure()?.errorText))
   page.setDefaultTimeout(15000)
   page.on('console', (message) => {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
@@ -106,6 +109,13 @@ try {
   await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.click()
   await expect(address).toBeFocused()
+  console.log(
+    'STAGE navigate',
+    await page.evaluate(() => ({
+      address: document.querySelector('[name="simple-browser-address"]')?.value,
+      history: localStorage.getItem('simple-browser-history'),
+    })),
+  )
   await address.fill(url)
   await address.press('Enter')
   const guestSnapshot = (targetId) =>
@@ -143,7 +153,21 @@ try {
     )
     .toBe(true)
   await expect(address).toBeFocused()
+  console.log(
+    'STAGE preserved',
+    await page.evaluate(() => ({
+      address: document.querySelector('[name="simple-browser-address"]')?.value,
+      history: localStorage.getItem('simple-browser-history'),
+    })),
+  )
   await expect(address).toHaveValue(focusedAddress)
+  console.log(
+    'STAGE navigate',
+    await page.evaluate(() => ({
+      address: document.querySelector('[name="simple-browser-address"]')?.value,
+      history: localStorage.getItem('simple-browser-history'),
+    })),
+  )
   await address.fill(url)
   await address.press('Enter')
   await expect
@@ -155,6 +179,13 @@ try {
       ),
     )
     .toBe(true)
+  console.log(
+    'STAGE before-draft',
+    await page.evaluate(() => ({
+      address: document.querySelector('[name="simple-browser-address"]')?.value,
+      history: localStorage.getItem('simple-browser-history'),
+    })),
+  )
   await app.evaluate(async ({ webContents }, targetId) => {
     const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
     await guest.executeJavaScript(
@@ -170,6 +201,13 @@ try {
   }, focusedGuest.id)
   await expect(address).toBeFocused()
   await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([0, url.length])
+  console.log(
+    'STAGE after-focus',
+    await page.evaluate(() => ({
+      address: document.querySelector('[name="simple-browser-address"]')?.value,
+      history: localStorage.getItem('simple-browser-history'),
+    })),
+  )
   const cdp = await page.context().newCDPSession(page)
   // Playwright's focus emulation suppresses native WebContentsView blur events.
   await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: false })
@@ -700,6 +738,25 @@ try {
     }),
   )
 } finally {
+  try {
+    await mkdir('.diagnostics', { recursive: true })
+    for (const [index, window] of ((await app?.windows()) || []).entries()) {
+      await writeFile(
+        '.diagnostics/workspace-' + index + '.json',
+        JSON.stringify(
+          await window.evaluate(() => ({
+            url: location.href,
+            html: document.body.innerHTML,
+            history: localStorage.getItem('simple-browser-history'),
+          })),
+        ),
+      )
+      await window.screenshot({ path: '.diagnostics/workspace-' + index + '.png' })
+    }
+  } catch (error) {
+    console.error('CAPTURE ERROR', String(error))
+  }
+
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await rm(profile, { recursive: true, force: true })

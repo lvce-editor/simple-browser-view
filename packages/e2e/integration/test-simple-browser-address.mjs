@@ -83,7 +83,10 @@ try {
       return net.fetch(request.url, { bypassCustomProtocolHandlers: true })
     })
   })
+  app.process().stderr.on('data', (data) => console.error('ELECTRON STDERR', String(data)))
   const page = await app.firstWindow()
+  page.on('pageerror', (error) => console.error('PAGE ERROR', String(error)))
+  page.on('requestfailed', (request) => console.error('REQUEST FAILED', request.url(), request.failure()?.errorText))
   page.setDefaultTimeout(15000)
   const captureErrors = []
   page.on('console', (message) => {
@@ -509,6 +512,25 @@ try {
   console.log('Closed tabs reopen from address-bar and native web-page shortcuts')
   console.log('History suggestions preserve the toolbar and typing; visible and background new-tab pages follow the browser theme')
 } finally {
+  try {
+    await mkdir('.diagnostics', { recursive: true })
+    for (const [index, window] of ((await app?.windows()) || []).entries()) {
+      await writeFile(
+        '.diagnostics/address-' + index + '.json',
+        JSON.stringify(
+          await window.evaluate(() => ({
+            url: location.href,
+            html: document.body.innerHTML,
+            history: localStorage.getItem('simple-browser-history'),
+          })),
+        ),
+      )
+      await window.screenshot({ path: '.diagnostics/address-' + index + '.png' })
+    }
+  } catch (error) {
+    console.error('CAPTURE ERROR', String(error))
+  }
+
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await new Promise((resolveClose) => server.close(resolveClose))
