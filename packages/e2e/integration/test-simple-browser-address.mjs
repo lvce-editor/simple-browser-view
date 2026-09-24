@@ -52,6 +52,14 @@ await build({
     {
       name: 'navigation-diagnosis',
       setup(build) {
+        build.onLoad({ filter: /RequestAnimationFrame\.js$/ }, async ({ path }) => {
+          let contents = await readFile(path, 'utf8')
+          contents = contents.replace(
+            'globalThis.requestAnimationFrame(fn)',
+            'console.log("STARTUP raf request",performance.now()); globalThis.requestAnimationFrame((t)=>{ console.log("STARTUP raf callback",t,performance.now());fn(t) })',
+          )
+          return { contents, loader: 'js' }
+        })
         build.onLoad({ filter: /ViewletManager\.js$/ }, async ({ path }) => {
           let contents = await readFile(path, 'utf8')
           contents = contents.replace(
