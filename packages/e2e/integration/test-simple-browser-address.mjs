@@ -53,7 +53,7 @@ await new Promise((resolveListen) => server.listen(0, '127.0.0.1', resolveListen
 const url = `http://127.0.0.1:${server.address().port}/article`
 let app
 try {
-  await writeFile(rendererPath, rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
+  await writeFile(rendererPath, "(() => {\n const entries=[]; let dropped=0;\n globalThis.__browserCapture={entries,get dropped(){return dropped}};\n const record=(kind,data)=>{if(entries.length>=12000){dropped++;return}try{let raw=JSON.stringify(data,(_k,v)=>v instanceof MessagePort?'[MessagePort]':v);entries.push({seq:entries.length,time:performance.now(),kind,data:raw.length>50000?{truncated:true,text:raw.slice(0,50000)}:JSON.parse(raw)})}catch{}};\n const add=EventTarget.prototype.addEventListener;const seen=new WeakSet();\n EventTarget.prototype.addEventListener=function(type,fn,options){if(type==='message'&&!seen.has(this)){seen.add(this);add.call(this,type,e=>record('receive',e.data))}return add.call(this,type,fn,options)};\n const post=MessagePort.prototype.postMessage;MessagePort.prototype.postMessage=function(data,...args){record('send',data);return post.call(this,data,...args)};\n for(const type of ['input','submit','keydown','focusin','focusout']) add.call(document,type,e=>{const t=e.target;record(type,{key:e.key,name:t.name,value:t.value,start:t.selectionStart,end:t.selectionEnd,active:document.activeElement?.name,focused:document.hasFocus()})},true);\n add.call(window,'error',e=>record('error',{message:e.message}));add.call(window,'unhandledrejection',e=>record('rejection',{message:String(e.reason)}));\n record('renderer-start',{url:location.href});\n})();\n" + rendererSource.replace('/packages/renderer-worker/src/rendererWorkerMain.ts', bundleUrl))
   const env = { ...process.env, DEV: '1', LVCE_ROOT: root, LVCE_SHARED_PROCESS_PATH: join(root, 'packages/shared-process/src/sharedProcessMain.ts') }
   delete env.ELECTRON_RUN_AS_NODE
   for (const key of ['CONFIG', 'DATA', 'STATE', 'CACHE']) env[`XDG_${key}_HOME`] = join(profile, key.toLowerCase())
@@ -79,7 +79,10 @@ try {
       return net.fetch(request.url, { bypassCustomProtocolHandlers: true })
     })
   })
+  await app.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   const page = await app.firstWindow()
+  page.on('pageerror', (error) => console.error('PAGE ERROR', String(error)))
+  page.on('requestfailed', (request) => console.error('REQUEST FAILED', request.url(), request.failure()?.errorText))
   page.setDefaultTimeout(15000)
   const captureErrors = []
   page.on('console', (message) => {
@@ -477,6 +480,17 @@ try {
   console.log('Closed tabs reopen from address-bar and native web-page shortcuts')
   console.log('History suggestions preserve the toolbar and typing; visible and background new-tab pages follow the browser theme')
 } finally {
+  if (app) {
+    await mkdir('.diagnostics', { recursive: true })
+    const pages = await app.windows()
+    for (let index = 0; index < pages.length; index++) {
+      try {
+        const data = await pages[index].evaluate(() => ({ url: location.href, capture: globalThis.__browserCapture, html: document.body?.innerHTML }))
+        await writeFile('.diagnostics/address-' + index + '.json', JSON.stringify(data))
+      } catch (error) { console.error('CAPTURE ERROR', String(error)) }
+    }
+    await app.context().tracing.stop({ path: '.diagnostics/address.zip' })
+  }
   await app?.close()
   await writeFile(rendererPath, rendererSource)
   await new Promise((resolveClose) => server.close(resolveClose))
