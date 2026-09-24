@@ -32,9 +32,9 @@ for (const file of files) {
       await writeFile(
         join(config, 'keybindings.json'),
         JSON.stringify([
-          { source: 'User', key: 3111, command: 'Main.openUri', args: ['app://keybindings'] },
-          { source: 'User', key: 3102, command: 'Layout.hideSideBar' },
-          { source: 'User', key: 2580, command: 'Layout.showPreview', args: ['simple-browser://'] },
+          { args: ['app://keybindings'], command: 'Main.openUri', key: 3111, source: 'User' },
+          { command: 'Layout.hideSideBar', key: 3102, source: 'User' },
+          { args: ['simple-browser://'], command: 'Layout.showPreview', key: 2580, source: 'User' },
         ]),
       )
     }

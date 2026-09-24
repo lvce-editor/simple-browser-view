@@ -1,4 +1,5 @@
 import type { ElectronTestContext } from './_responseTest.ts'
+import * as Fixture from './_browserFixture.ts'
 
 export const name = 'simple-browser.keybinding-popup-position'
 
@@ -52,7 +53,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
 
   await page.keyboard.press('Escape')
   await expect(popup).toBeHidden()
-  await page.locator('.PreviewCloseButton').click()
+  await Fixture.pressControl(page.locator('.PreviewCloseButton'))
   await expect(page.locator('.PreviewArea')).toHaveCount(0)
   await firstKeybinding.dblclick()
   await expect(popup).toBeVisible()
@@ -60,7 +61,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     .poll(() => getCenter(popup))
     .toBeCloseTo(
       await page.locator('#Workbench').evaluate((element) => {
-        const { x, width } = element.getBoundingClientRect()
+        const { width, x } = element.getBoundingClientRect()
         return x + width / 2
       }),
       0,
