@@ -45,7 +45,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await passwordInput.press('Enter')
     await expect(passwordInput).toHaveValue('')
     await expect(dialog).toBeVisible()
-    await dialog.getByRole('button', { name: 'Cancel', exact: true }).click()
+    await dialog.getByRole('button', { exact: true, name: 'Cancel' }).press('Enter')
     await expect(dialog).toBeHidden()
 
     await SimpleBrowser.setUrl(page, privateUrl)
