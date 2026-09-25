@@ -4,9 +4,6 @@ import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.basic-auth'
 
-// Enable after the Basic Auth bridge and dialog have been released into the editor.
-export const skip = 1
-
 const username = 'test-user'
 const password = ['test', 'password'].join('-')
 const credentials = [username, password].join(':')
@@ -37,9 +34,9 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await SimpleBrowser.show(page)
     await SimpleBrowser.setUrl(page, privateUrl)
 
-    const dialog = page.getByRole('dialog', { name: 'Authentication Required' })
+    const dialog = page.getByRole('dialog', { name: 'Sign in to website' })
     await expect(dialog).toBeVisible()
-    await expect(dialog).toContainText('Realm: Simple Browser Test')
+    await expect(dialog).toContainText('“Simple Browser Test” requires a username and password.')
     await dialog.getByLabel('Username').fill(username)
     const passwordInput = dialog.getByLabel('Password')
     await passwordInput.fill(password)
