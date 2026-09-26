@@ -201,11 +201,20 @@ jobs:
         with:
           path: packages/e2e/.test-with-playwright/electron
           key: ${{ runner.os }}-simple-browser-electron-${{ env.LVCE_ELECTRON_VERSION }}
+      - name: Download candidate Electron build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 36272293862 --repo lvce-editor/lvce-editor --name electron-app-ubuntu-24.04 --dir "$RUNNER_TEMP/candidate-download"
+          debs=("$RUNNER_TEMP/candidate-download/"*.deb)
+          test "${#debs[@]}" -eq 1
+          dpkg-deb -x "${debs[0]}" "$RUNNER_TEMP/candidate"
+          test -x "$RUNNER_TEMP/candidate/usr/lib/lvce/lvce"
       - name: Validate tab dragging
         working-directory: ./packages/e2e
         run: |
           set -o pipefail
-          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder 2>&1 | tee tab-drag.log
+          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder --electron-path=$RUNNER_TEMP/candidate/usr/lib/lvce/lvce 2>&1 | tee tab-drag.log
       - name: Upload attempt evidence
         if: always()
         uses: actions/upload-artifact@v7
@@ -270,6 +279,15 @@ jobs:
           fi
           wayland-info > "$RUNNER_TEMP/wayland-info.log"
           pulseaudio --start --exit-idle-time=-1
+      - name: Download candidate Electron build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download 36272293862 --repo lvce-editor/lvce-editor --name electron-app-ubuntu-24.04 --dir "$RUNNER_TEMP/candidate-download"
+          debs=("$RUNNER_TEMP/candidate-download/"*.deb)
+          test "${#debs[@]}" -eq 1
+          dpkg-deb -x "${debs[0]}" "$RUNNER_TEMP/candidate"
+          test -x "$RUNNER_TEMP/candidate/usr/lib/lvce/lvce"
       - name: Wayland Electron e2e
         working-directory: ./packages/e2e
         env:
@@ -279,7 +297,7 @@ jobs:
           set -o pipefail
           unset DISPLAY
           echo "Running Electron with --ozone-platform=wayland and no DISPLAY"
-          npm run e2e:electron -- --filter=simple-browser.tab-reorder \
+          npm run e2e:electron -- --filter=simple-browser.tab-reorder --electron-path=$RUNNER_TEMP/candidate/usr/lib/lvce/lvce \
             --electron-arg=--no-sandbox \
             --electron-arg=--disable-gpu \
             --electron-arg=--ozone-platform=wayland \
