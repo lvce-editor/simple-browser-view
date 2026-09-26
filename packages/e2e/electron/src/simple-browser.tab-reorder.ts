@@ -1,4 +1,6 @@
+/* eslint-disable unicorn/isolated-functions, unicorn/no-global-object-property-assignment, unicorn/no-return-array-push -- temporary browser-context drag diagnostics */
 import type { Locator, Page } from '@playwright/test'
+import { mkdir, writeFile } from 'node:fs/promises'
 import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
@@ -16,6 +18,10 @@ const getTabTitles = async (tabs: Locator): Promise<readonly string[]> => {
 }
 
 const dragTab = async (page: Page, source: Locator, target: Locator, side: 'before' | 'after'): Promise<void> => {
+  await page.evaluate(() => {
+    const capture = (globalThis as any).__tabDragCapture
+    capture?.push({ time: performance.now(), type: 'drag-helper-start' })
+  })
   const sourceBox = await source.boundingBox()
   const targetBox = await target.boundingBox()
   if (!sourceBox || !targetBox) {
@@ -63,6 +69,51 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await SimpleBrowser.openUrl(page, threeUrl)
     await expect(tabs).toHaveCount(3)
 
+    await page.evaluate(() => {
+      const capture: unknown[] = []
+      ;(globalThis as any).__tabDragCapture = capture
+      const record = (event: Event): void => {
+        const mouse = event as MouseEvent
+        const target = event.target as Element
+        if (!target?.closest?.('.SimpleBrowser')) return
+        capture.push({
+          buttons: mouse.buttons,
+          effect: (event as DragEvent).dataTransfer?.dropEffect,
+          tabs: Array.from(document.querySelectorAll('.SimpleBrowserTab'), (tab) => {
+            const element = tab as HTMLElement
+            const rect = element.getBoundingClientRect()
+            return {
+              className: element.className,
+              offsetLeft: element.offsetLeft,
+              offsetWidth: element.offsetWidth,
+              parentScroll: element.parentElement?.scrollLeft,
+              title: element.getAttribute('aria-label'),
+              width: rect.width,
+              x: rect.x,
+            }
+          }),
+          target: target.className,
+          time: performance.now(),
+          type: event.type,
+          x: mouse.clientX,
+          y: mouse.clientY,
+        })
+      }
+      for (const event of ['pointerdown', 'pointerup', 'dragstart', 'dragenter', 'dragover', 'dragleave', 'drop', 'dragend']) {
+        document.addEventListener(event, record, { capture: true })
+      }
+      const observer = new MutationObserver(() =>
+        capture.push({
+          tabs: Array.from(document.querySelectorAll('.SimpleBrowserTab'), (tab) => ({
+            className: tab.className,
+            title: tab.getAttribute('aria-label'),
+          })),
+          time: performance.now(),
+          type: 'mutation',
+        }),
+      )
+      observer.observe(document.querySelector('.SimpleBrowserTabItems')!, { attributes: true, childList: true, subtree: true })
+    })
     const oneTab = tabs.filter({ hasText: 'One' })
     const twoTab = tabs.filter({ hasText: 'Two' })
     await expect(twoTab).toHaveAttribute('draggable', 'true')
@@ -96,6 +147,12 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await newTabButton.click()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Two', 'New Tab'])
   } finally {
-    await server.close()
+    try {
+      const capture = await page.evaluate(() => (globalThis as any).__tabDragCapture || [])
+      await mkdir('.test-with-playwright/artifacts', { recursive: true })
+      await writeFile('.test-with-playwright/artifacts/tab-drag-events.json', JSON.stringify(capture, null, 2))
+    } finally {
+      await server.close()
+    }
   }
 }
