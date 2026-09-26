@@ -209,12 +209,12 @@ jobs:
           debs=("$RUNNER_TEMP/candidate-download/"*.deb)
           test "${#debs[@]}" -eq 1
           dpkg-deb -x "${debs[0]}" "$RUNNER_TEMP/candidate"
-          test -x "$RUNNER_TEMP/candidate/usr/lib/lvce/lvce"
+          test -x "$RUNNER_TEMP/candidate/usr/lib/lvce-oss/lvce-oss"
       - name: Validate tab dragging
         working-directory: ./packages/e2e
         run: |
           set -o pipefail
-          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder --electron-path=$RUNNER_TEMP/candidate/usr/lib/lvce/lvce 2>&1 | tee tab-drag.log
+          xvfb-run -a npm run e2e:electron -- --filter=simple-browser.tab-reorder --electron-path=$RUNNER_TEMP/candidate/usr/lib/lvce-oss/lvce-oss 2>&1 | tee tab-drag.log
       - name: Upload attempt evidence
         if: always()
         uses: actions/upload-artifact@v7
@@ -287,7 +287,7 @@ jobs:
           debs=("$RUNNER_TEMP/candidate-download/"*.deb)
           test "${#debs[@]}" -eq 1
           dpkg-deb -x "${debs[0]}" "$RUNNER_TEMP/candidate"
-          test -x "$RUNNER_TEMP/candidate/usr/lib/lvce/lvce"
+          test -x "$RUNNER_TEMP/candidate/usr/lib/lvce-oss/lvce-oss"
       - name: Wayland Electron e2e
         working-directory: ./packages/e2e
         env:
@@ -297,7 +297,7 @@ jobs:
           set -o pipefail
           unset DISPLAY
           echo "Running Electron with --ozone-platform=wayland and no DISPLAY"
-          npm run e2e:electron -- --filter=simple-browser.tab-reorder --electron-path=$RUNNER_TEMP/candidate/usr/lib/lvce/lvce \
+          npm run e2e:electron -- --filter=simple-browser.tab-reorder --electron-path=$RUNNER_TEMP/candidate/usr/lib/lvce-oss/lvce-oss \
             --electron-arg=--no-sandbox \
             --electron-arg=--disable-gpu \
             --electron-arg=--ozone-platform=wayland \
