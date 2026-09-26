@@ -8,8 +8,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   const simpleBrowser = page.locator('.SimpleBrowser').last()
   // eslint-disable-next-line e2e/no-direct-click -- exercises the actual new-tab control
   await simpleBrowser.getByRole('button', { exact: true, name: 'New Tab' }).click()
-  const newTabPage = await SimpleBrowser.waitForWebContentsPage(page, 'data:text/html')
-  const input = newTabPage.getByRole('searchbox', { name: 'Search with Google' })
+  const input = simpleBrowser.getByRole('searchbox', { name: 'Search with Google' })
 
   await expect(input).toHaveCSS('user-select', 'none')
 }
