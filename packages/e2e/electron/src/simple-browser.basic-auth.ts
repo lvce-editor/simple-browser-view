@@ -4,9 +4,6 @@ import * as TestServer from './_testServer.ts'
 
 export const name = 'simple-browser.basic-auth'
 
-// Enable after the Basic Auth bridge and dialog have been released into the editor.
-export const skip = 1
-
 const username = 'test-user'
 const password = ['test', 'password'].join('-')
 const credentials = [username, password].join(':')
@@ -37,11 +34,23 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await SimpleBrowser.show(page)
     await SimpleBrowser.setUrl(page, privateUrl)
 
-    const dialog = page.getByRole('dialog', { name: 'Authentication Required' })
+    const dialog = page.getByRole('dialog', { name: 'Sign in to website' })
     await expect(dialog).toBeVisible()
-    await expect(dialog).toContainText('Realm: Simple Browser Test')
-    await dialog.getByLabel('Username').fill(username)
+    await expect(dialog).toContainText('“Simple Browser Test” requires a username and password.')
+    await expect(dialog).toContainText('127.0.0.1')
     const passwordInput = dialog.getByLabel('Password')
+    await expect(passwordInput).toHaveAttribute('type', 'password')
+    await dialog.getByLabel('Username').fill(username)
+    await passwordInput.fill('incorrect-password')
+    await passwordInput.press('Enter')
+    await expect(passwordInput).toHaveValue('')
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { exact: true, name: 'Cancel' }).press('Enter')
+    await expect(dialog).toBeHidden()
+
+    await SimpleBrowser.setUrl(page, privateUrl)
+    await expect(dialog).toBeVisible()
+    await dialog.getByLabel('Username').fill(username)
     await passwordInput.fill(password)
     await passwordInput.press('Enter')
     await expect(dialog).toBeHidden()
