@@ -26,8 +26,8 @@ export const hide = (id: number): Promise<void> => {
   return EmbedsWorker.invoke('ElectronWebContentsView.hide', id)
 }
 
-export const setFallthroughKeyBindings = (fallthroughKeyBindings: readonly any[]): Promise<void> => {
-  return EmbedsWorker.invoke('ElectronWebContentsView.setFallthroughKeyBindings', fallthroughKeyBindings)
+export const setFallthroughKeyBindings = (id: number, fallthroughKeyBindings: readonly any[]): Promise<void> => {
+  return EmbedsWorker.invoke('ElectronWebContentsView.setFallthroughKeyBindings', id, fallthroughKeyBindings)
 }
 
 export const getStats = (id: number): Promise<any> => {
