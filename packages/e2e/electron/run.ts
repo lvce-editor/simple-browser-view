@@ -28,6 +28,16 @@ for (const file of files) {
     const config = join(profile, 'config', name)
     await mkdir(config, { recursive: true })
     await writeFile(join(config, 'settings.json'), '{}')
+    if (file === 'simple-browser.keybinding-popup-position.ts') {
+      await writeFile(
+        join(config, 'keybindings.json'),
+        JSON.stringify([
+          { args: ['app://keybindings'], command: 'Main.openUri', key: 3111, source: 'User' },
+          { command: 'Layout.hideSideBar', key: 3102, source: 'User' },
+          { args: ['simple-browser://'], command: 'Layout.showPreview', key: 2580, source: 'User' },
+        ]),
+      )
+    }
   }
   try {
     process.stdout.write(`RUN ${file}\n`)

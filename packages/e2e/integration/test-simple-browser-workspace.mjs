@@ -73,11 +73,19 @@ try {
     })
   })
   const page = await app.firstWindow()
+  // Xvfb can throttle animation frames even in a visible, focused window.
+  // Keep compositor-driven actionability checks live in this isolated test app.
+  await app.evaluate(({ BrowserWindow }) => {
+    for (const window of BrowserWindow.getAllWindows()) window.webContents.setBackgroundThrottling(false)
+  })
+  // Activate the native window before Playwright waits for compositor-driven stability.
+  await page.bringToFront()
   page.setDefaultTimeout(15000)
   page.on('console', (message) => {
     if (message.type() === 'error') console.error('APP ERROR', message.text())
   })
   await expect(page.locator('#Workbench')).toBeVisible({ timeout: 15000 })
+
   const runCommand = async (label) => {
     await page.keyboard.press('Control+Shift+P')
     const input = page.locator('[name="QuickPickInput"]')
@@ -97,11 +105,15 @@ try {
   await page.keyboard.press('Control+c')
   await expect.poll(() => app.evaluate(({ clipboard }) => clipboard.readText())).toContain('second line')
   const selectedEditorText = await app.evaluate(({ clipboard }) => clipboard.readText())
+  const cdp = await page.context().newCDPSession(page)
+  // Playwright's focus emulation suppresses native WebContentsView blur events.
+  await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: false })
   await runCommand('Simple Browser: Toggle Full Width')
   await expect(page.locator('.BrowserFullWidth')).toBeVisible()
   const address = page.locator('[name="simple-browser-address"]')
   await expect(page.locator('.SimpleBrowserTabSelected')).toHaveAttribute('aria-label', 'Example Domain')
   await expect(address).toHaveValue('https://example.com/')
+  await expect(page.locator('.SimpleBrowser .MaskIconRefresh')).toBeVisible()
   await address.click()
   await expect(address).toBeFocused()
   await address.fill(url)
@@ -127,8 +139,12 @@ try {
   const focusedGuest = await guestSnapshot()
   if (!focusedGuest) throw new Error('Expected the browser page to remain available before focusing the address')
   const focusedAddress = await address.inputValue()
-  await address.focus()
+  // CDP clicks target the renderer directly; give its native WebContents focus
+  // as an actual click outside the guest would before testing address ownership.
+  await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.focus())
+  await address.click()
   await expect(address).toBeFocused()
+  await expect.poll(() => app.evaluate(({ webContents }, targetId) => webContents.fromId(targetId).isFocused(), focusedGuest.id)).toBe(false)
   await app.evaluate(async ({ webContents }, targetId) => {
     const guest = webContents.getAllWebContents().find((item) => item.id === targetId)
     if (!guest) throw new Error(`Expected browser WebContents ${targetId} to remain available while the address is focused`)
@@ -167,7 +183,38 @@ try {
   }, focusedGuest.id)
   await expect(address).toBeFocused()
   await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([0, url.length])
-  await address.fill('known')
+  try {
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.focus())
+    await address.focus()
+    await address.press('Control+a')
+    await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([0, url.length])
+    await app.evaluate(({ webContents }, prefix) => {
+      webContents
+        .getAllWebContents()
+        .find((item) => item.getURL().startsWith(prefix))
+        .focus()
+    }, url)
+    await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([0, 0])
+    await expect(address).toHaveValue(url)
+    await app.evaluate(({ webContents }, prefix) => {
+      const guest = webContents.getAllWebContents().find((item) => item.getURL().startsWith(prefix))
+      guest.sendInputEvent({ type: 'keyDown', keyCode: 'L', modifiers: ['control'] })
+      guest.sendInputEvent({ type: 'keyUp', keyCode: 'L', modifiers: ['control'] })
+    }, url)
+    await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([0, url.length])
+  } finally {
+    await cdp.send('Emulation.setFocusEmulationEnabled', { enabled: true })
+    await cdp.detach()
+  }
+  await address.press('Control+a')
+  let typedQuery = ''
+  for (const character of 'known') {
+    typedQuery += character
+    await address.pressSequentially(character)
+    await expect(address).toHaveValue(typedQuery)
+    await expect.poll(() => address.evaluate((input) => [input.selectionStart, input.selectionEnd])).toEqual([typedQuery.length, typedQuery.length])
+    if (typedQuery.length >= 2) await expect(page.locator('.SimpleBrowserSuggestions')).toBeVisible()
+  }
   await expect(page.getByRole('option', { name: 'known first', exact: true })).toBeVisible()
   await expect(page.locator('.SimpleBrowserSuggestionSelected')).toHaveCount(0)
   await address.press('ArrowDown')

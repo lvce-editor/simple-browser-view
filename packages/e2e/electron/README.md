@@ -21,6 +21,6 @@ npm run e2e:electron -- --filter=simple-browser.workspace-
 
 Each case has a two-minute deadline covering startup, execution, and shutdown. The runner starts a fresh Electron process and isolated XDG profile for each case. Local HTTP fixtures avoid external website dependencies; suggestion tests intercept the provider in Electron. Native menu tests construct the real menu and invoke its captured action without leaving an operating-system popup open. Folder and external-browser actions capture the native shell call and verify its destination.
 
-The default app version is pinned in `electron/run.ts` and CI. Override it with `LVCE_ELECTRON_VERSION` or `--electron-version`. Linux CI runs the Electron suite and runs the audio-indicator case separately with PulseAudio. The Basic Auth case remains explicitly skipped pending its dialog integration.
+The default app version is pinned in `electron/run.ts` and CI. Override it with `LVCE_ELECTRON_VERSION` or `--electron-version`. Linux CI runs the Electron suite and runs the audio-indicator case separately with PulseAudio. The Basic Auth case verifies the Simple Browser sign-in dialog against a protected local HTTP endpoint.
 
 Shared-fixture cases save Playwright traces under `.test-with-playwright/artifacts`; CI uploads them after a failure. Open a downloaded trace with `npx playwright show-trace <trace.zip>`.
