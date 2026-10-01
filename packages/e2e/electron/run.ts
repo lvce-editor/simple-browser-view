@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 const args = process.argv.slice(2)
 const filter = args.find((arg) => arg.startsWith('--filter='))?.slice('--filter='.length) || ''
 const version =
-  args.find((arg) => arg.startsWith('--electron-version='))?.slice('--electron-version='.length) || process.env.LVCE_ELECTRON_VERSION || 'v0.118.12'
+  args.find((arg) => arg.startsWith('--electron-version='))?.slice('--electron-version='.length) || process.env.LVCE_ELECTRON_VERSION || 'v0.119.14'
 const extraArgs = args.filter((arg) => !arg.startsWith('--filter=') && !arg.startsWith('--electron-version='))
 const entries = await readdir(join(import.meta.dirname, 'src'))
 const files = entries
