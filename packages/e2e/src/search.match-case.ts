@@ -6,7 +6,9 @@ export const test: Test = async ({ expect, FileSystem, Locator, Search, SideBar,
   // arrange
   const tmpDir = await FileSystem.getTmpDir()
   await FileSystem.writeFile(`${tmpDir}/test.css`, `Abc`)
-  await Workspace.setUri(tmpDir)
+  // The pinned 0.89 server runtime predates Workspace.setUri.
+  // eslint-disable-next-line @typescript-eslint/no-deprecated
+  await Workspace.setPath(tmpDir)
   await SideBar.open('Search')
   await Search.setValue('abc')
   await Search.setReplaceValue('')
