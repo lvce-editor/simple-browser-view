@@ -114,6 +114,8 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     expect(browserFullWidth).toBeUndefined()
     await page.reload()
     await expect(page.locator('.Workbench')).toBeVisible()
+    await expect(page.locator('.SimpleBrowser')).toBeVisible()
+    await expect(page.locator('.SimpleBrowser').getByRole('tab')).toContainText('One')
     await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
   },
   'reveal-pane': async ({ electronApp, expect, guest, page }): Promise<void> => {

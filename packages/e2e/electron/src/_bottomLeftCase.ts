@@ -69,12 +69,12 @@ export const run = async ({ electronApp, expect, page }: ElectronTestContext, si
         return box?.width
       })
       .toBeLessThan(overlay.width)
-    const resized = await bottom.boundingBox()
-    expect(resized).not.toBeNull()
-    await expect.poll(() => moved.evaluate(() => ({ height: innerHeight, width: innerWidth }))).toEqual({
-      height: Math.round(resized!.height - 65),
-      width: Math.round(resized!.width),
-    })
+    await expect.poll(async () => {
+      const resized = await bottom.boundingBox()
+      if (!resized) return false
+      const native = await moved.evaluate(() => ({ height: innerHeight, width: innerWidth }))
+      return native.width === Math.round(resized.width) && native.height === Math.round(resized.height - 65)
+    }).toBe(true)
     if (!single) {
       await fixture.guest.locator('#draft').fill('right remains usable')
       await expect(fixture.guest.locator('#draft')).toHaveValue('right remains usable')
