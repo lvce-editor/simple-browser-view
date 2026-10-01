@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises'
 import type { ElectronTestContext } from './_responseTest.ts'
 import * as SimpleBrowser from './_simpleBrowser.ts'
 import * as TestServer from './_testServer.ts'
@@ -10,12 +11,17 @@ const credentials = [username, password].join(':')
 const expectedAuthorization = `Basic ${Buffer.from(credentials).toString('base64')}`
 
 export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
+  let stage = 'initial challenge'
+  const responses: string[] = []
+  await mkdir('.test-with-playwright/artifacts', { recursive: true })
+  await page.context().tracing.start({ screenshots: true, snapshots: true, sources: true })
   const server = await TestServer.start((request, response) => {
     if (request.url !== '/private') {
       response.writeHead(404)
       response.end()
       return
     }
+    responses.push(request.headers.authorization === expectedAuthorization ? 'accepted' : 'challenged')
     if (request.headers.authorization !== expectedAuthorization) {
       response.writeHead(401, {
         'content-type': 'text/plain; charset=utf-8',
@@ -47,6 +53,7 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await expect(passwordInput).toHaveValue('')
     await expect(dialog).toBeVisible()
     await expect(dialog.getByLabel('Username')).toBeFocused()
+    stage = 'cancel retry challenge'
     await dialog.getByRole('button', { exact: true, name: 'Cancel' }).press('Enter')
     await expect(dialog).toBeHidden()
 
@@ -54,13 +61,23 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await expect(dialog).toBeVisible()
     await expect(dialog.getByLabel('Username')).toBeFocused()
     await dialog.getByLabel('Username').fill(username)
+    stage = 'submit valid credentials'
     await passwordInput.fill(password)
     await passwordInput.press('Enter')
     await expect(dialog).toBeHidden()
 
     const webContentsPage = await SimpleBrowser.waitForWebContentsPage(page, privateUrl)
     await expect(webContentsPage.getByRole('heading', { name: 'Authenticated content' })).toBeVisible()
+  } catch (error) {
+    const form = await page.locator('.SimpleBrowserLoginForm').evaluateAll((forms) => forms.map((form) => ({
+      focused: globalThis.document.activeElement?.getAttribute('name') || globalThis.document.activeElement?.getAttribute('value'),
+      passwordLength: (form.querySelector('[name=password]') as HTMLInputElement)?.value.length,
+      requestId: (form as HTMLElement).dataset.requestid,
+      usernameLength: (form.querySelector('[name=username]') as HTMLInputElement)?.value.length,
+    })))
+    throw new Error(JSON.stringify({ form, responses, stage }), { cause: error })
   } finally {
+    await page.context().tracing.stop({ path: '.test-with-playwright/artifacts/basic-auth.zip' })
     await server.close()
   }
 }
