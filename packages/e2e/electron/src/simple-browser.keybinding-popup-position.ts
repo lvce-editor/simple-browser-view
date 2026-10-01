@@ -16,7 +16,13 @@ const getIdeCenter = async (page: ElectronTestContext['page']): Promise<number> 
   return workbench.x + (workbench.width - preview.width) / 2
 }
 
-export const test = async ({ expect, page }: ElectronTestContext): Promise<void> => {
+export const test = async ({ electronApp, expect, page }: ElectronTestContext): Promise<void> => {
+  await Fixture.writeConfig(electronApp, 'keybindings.json', [
+    { args: ['app://keybindings'], command: 'Main.openUri', key: 3111, source: 'User' },
+    { command: 'Layout.hideSideBar', key: 3102, source: 'User' },
+    { args: ['simple-browser://'], command: 'Layout.showPreview', key: 2580, source: 'User' },
+  ])
+  await page.reload()
   page.context().setDefaultTimeout(15_000)
   await page.locator('.Workbench').waitFor({ state: 'visible' })
   await page.locator('.SideBar .Explorer').waitFor({ state: 'visible' })

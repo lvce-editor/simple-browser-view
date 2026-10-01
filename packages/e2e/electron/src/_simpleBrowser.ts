@@ -32,7 +32,7 @@ export const waitForWebContentsPage = async (page: Page, expectedUrl: string): P
   throw new Error(`Simple Browser WebContentsView did not navigate to ${expectedUrl}. Open pages: ${pageUrls.join(', ')}`)
 }
 
-export const show = async (page: Page): Promise<void> => {
+export const show = async (page: Page, location: 'editor' | 'preview' = 'editor'): Promise<void> => {
   page.context().setDefaultTimeout(10_000)
   await page
     .context()
@@ -59,8 +59,9 @@ export const show = async (page: Page): Promise<void> => {
   if (lastError) {
     throw lastError
   }
-  await input.fill('>Simple Browser: Open')
-  const command = quickPick.getByRole('option', { exact: true, name: 'Simple Browser: Open' })
+  const label = location === 'preview' ? 'Simple Browser: Open in Preview Area' : 'Simple Browser: Open'
+  await input.fill(`>${label}`)
+  const command = quickPick.getByRole('option', { exact: true, name: label })
   await command.waitFor({ state: 'visible' })
   await page.keyboard.press('Enter')
   await page.locator('.SimpleBrowser').last().waitFor({ state: 'visible' })

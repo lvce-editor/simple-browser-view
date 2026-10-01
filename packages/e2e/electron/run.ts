@@ -1,12 +1,13 @@
 import { spawn } from 'node:child_process'
-import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
+import { mkdir, mkdtemp, readdir, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const args = process.argv.slice(2)
 const filter = args.find((arg) => arg.startsWith('--filter='))?.slice('--filter='.length) || ''
 const version =
-  args.find((arg) => arg.startsWith('--electron-version='))?.slice('--electron-version='.length) || process.env.LVCE_ELECTRON_VERSION || 'v0.118.12'
+  args.find((arg) => arg.startsWith('--electron-version='))?.slice('--electron-version='.length) || process.env.LVCE_ELECTRON_VERSION || 'v0.119.14'
 const extraArgs = args.filter((arg) => !arg.startsWith('--filter=') && !arg.startsWith('--electron-version='))
 const entries = await readdir(join(import.meta.dirname, 'src'))
 const files = entries
@@ -24,28 +25,13 @@ for (const file of files) {
   const env = { ...process.env, SIMPLE_BROWSER_TEST_NAME: file, SIMPLE_BROWSER_TEST_PROFILE: profile, XDG_DOWNLOAD_DIR: join(profile, 'downloads') }
   await mkdir(env.XDG_DOWNLOAD_DIR, { recursive: true })
   for (const kind of ['CONFIG', 'DATA', 'CACHE', 'STATE']) env[`XDG_${kind}_HOME`] = join(profile, kind.toLowerCase())
-  for (const name of ['lvce', 'lvce-oss']) {
-    const config = join(profile, 'config', name)
-    await mkdir(config, { recursive: true })
-    await writeFile(join(config, 'settings.json'), '{}')
-    if (file === 'simple-browser.keybinding-popup-position.ts') {
-      await writeFile(
-        join(config, 'keybindings.json'),
-        JSON.stringify([
-          { args: ['app://keybindings'], command: 'Main.openUri', key: 3111, source: 'User' },
-          { command: 'Layout.hideSideBar', key: 3102, source: 'User' },
-          { args: ['simple-browser://'], command: 'Layout.showPreview', key: 2580, source: 'User' },
-        ]),
-      )
-    }
-  }
   try {
     process.stdout.write(`RUN ${file}\n`)
     const processGroup = process.platform !== 'win32'
     const child = spawn(
       process.execPath,
       [
-        './node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js',
+        fileURLToPath(import.meta.resolve('@lvce-editor/test-with-playwright/bin/test-with-playwright.js')),
         '--electron',
         '--only-extension=./extension',
         '--test-path=./electron',

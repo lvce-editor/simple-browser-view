@@ -6,6 +6,7 @@ Coverage includes:
 
 - Navigation, redirects, response types, loading, address focus, history, and downloads.
 - Tab creation, selection, reordering, duplication, closing, overflow, and background links.
+- Dragging a live browser tab below the editor, including cancellation, last-tab transfer, native bounds, navigation, and cleanup.
 - Full-width layout, resizing, saved layout, address selection, document preservation, and 50 consecutive switches.
 - Double-Ctrl from browser controls and embedded pages, disabled gestures, held keys, expired timing, shortcuts, intervening keys, and mouse cancellation.
 - Local and remote suggestions, stale requests, provider failure, keyboard and mouse selection, dismissal, and tab changes.
