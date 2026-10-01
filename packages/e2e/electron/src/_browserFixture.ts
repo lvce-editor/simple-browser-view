@@ -65,6 +65,7 @@ export const start = async (
   context: ElectronTestContext,
   preferences: Readonly<Record<string, unknown>> = {},
   storage: Readonly<Record<string, string>> = {},
+  location: 'editor' | 'preview' = 'editor',
 ): Promise<BrowserFixture> => {
   const artifactDirectory = join(process.cwd(), '.test-with-playwright', 'artifacts')
   await mkdir(artifactDirectory, { recursive: true })
@@ -105,7 +106,7 @@ export const start = async (
     await context.page.evaluate((values) => {
       for (const [key, value] of Object.entries(values)) localStorage.setItem(key, value)
     }, storage)
-    await SimpleBrowser.show(context.page)
+    await SimpleBrowser.show(context.page, location)
     const activeServer = server
     const guest = await SimpleBrowser.openUrl(context.page, `${server.url}/one`)
     const browser = context.page.locator('.SimpleBrowser').last()

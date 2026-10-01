@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 const args = process.argv.slice(2)
 const filter = args.find((arg) => arg.startsWith('--filter='))?.slice('--filter='.length) || ''
@@ -45,7 +46,7 @@ for (const file of files) {
     const child = spawn(
       process.execPath,
       [
-        './node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js',
+        fileURLToPath(import.meta.resolve('@lvce-editor/test-with-playwright/bin/test-with-playwright.js')),
         '--electron',
         '--only-extension=./extension',
         '--test-path=./electron',
