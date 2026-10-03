@@ -17,7 +17,8 @@ export const run = async ({ expect, page }: ElectronTestContext, { expectedText,
   try {
     await SimpleBrowser.show(page)
     const webContentsPage = await SimpleBrowser.openUrl(page, server.url)
-    await expect(webContentsPage.locator('body')).toHaveText(expectedText)
+    const locator1 = webContentsPage.locator('body')
+    await expect(locator1).toHaveText(expectedText)
   } finally {
     await server.close()
   }

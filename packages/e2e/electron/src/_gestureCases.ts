@@ -5,7 +5,7 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
   const fixture = await Fixture.start(context)
   const { electronApp, expect, page } = fixture
   try {
-    await electronApp.evaluate(async ({ BrowserWindow }, action) => {
+    const startedAt = await electronApp.evaluate(({ BrowserWindow }, action) => {
       const window = BrowserWindow.getAllWindows()[0]
       window.focus()
       const target = window.webContents
@@ -16,8 +16,6 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
         down()
         up()
       }
-      // eslint-disable-next-line unicorn/consistent-function-scoping -- this timer executes in the isolated Electron main process
-      const wait = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
       switch (action) {
         case 'copy-paste': {
           for (const keyCode of ['C', 'V']) {
@@ -31,18 +29,11 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
         }
         case 'expired-gap': {
           tap()
-          await wait(450)
-          tap()
-
-          break
+          return Date.now()
         }
         case 'held-control': {
           down()
-          await wait(300)
-          up()
-          tap()
-
-          break
+          return Date.now()
         }
         case 'intervening-key': {
           tap()
@@ -62,12 +53,32 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
         }
         // No default
       }
-      // Wait beyond the recognition interval before asserting a negative result.
-      await wait(450)
+      return Date.now()
     }, scenario)
-    await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
+    if (scenario === 'expired-gap') {
+      await expect.poll(() => Date.now()).toBeGreaterThan(startedAt + 450)
+      await electronApp.evaluate(({ BrowserWindow }) => {
+        const target = BrowserWindow.getAllWindows()[0].webContents
+        target.sendInputEvent({ keyCode: 'Control', type: 'keyDown' })
+        target.sendInputEvent({ keyCode: 'Control', type: 'keyUp' })
+      })
+    } else if (scenario === 'held-control') {
+      await expect.poll(() => Date.now()).toBeGreaterThan(startedAt + 300)
+      await electronApp.evaluate(({ BrowserWindow }) => {
+        const target = BrowserWindow.getAllWindows()[0].webContents
+        target.sendInputEvent({ keyCode: 'Control', type: 'keyUp' })
+        target.sendInputEvent({ keyCode: 'Control', type: 'keyDown' })
+        target.sendInputEvent({ keyCode: 'Control', type: 'keyUp' })
+      })
+    }
+    // These cases verify the gesture recognition window itself, so elapsed time is the observed condition.
+    const quietPeriodEnds = Date.now() + 450
+    await expect.poll(() => Date.now()).toBeGreaterThan(quietPeriodEnds)
+    const locator1 = page.locator('.BrowserFullWidth')
+    await expect(locator1).toHaveCount(0)
     await Fixture.gesture(context)
-    await expect(page.locator('.BrowserFullWidth')).toHaveCount(1)
+    const locator2 = page.locator('.BrowserFullWidth')
+    await expect(locator2).toHaveCount(1)
   } finally {
     await fixture.close()
   }

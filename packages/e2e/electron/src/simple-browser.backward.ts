@@ -11,15 +11,18 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   try {
     await SimpleBrowser.show(page)
     const webContentsPage = await SimpleBrowser.openUrl(page, pageAUrl)
-    await expect(webContentsPage.locator('h1')).toHaveText('Page A')
+    const locator1 = webContentsPage.locator('h1')
+    await expect(locator1).toHaveText('Page A')
 
     await SimpleBrowser.clickLink(webContentsPage, 'Go to Page B')
     await webContentsPage.waitForURL(pageBUrl)
-    await expect(webContentsPage.locator('h1')).toHaveText('Page B')
+    const locator2 = webContentsPage.locator('h1')
+    await expect(locator2).toHaveText('Page B')
 
     await SimpleBrowser.clickButton(page, 'Back')
     await webContentsPage.waitForURL(pageAUrl)
-    await expect(webContentsPage.locator('h1')).toHaveText('Page A')
+    const locator3 = webContentsPage.locator('h1')
+    await expect(locator3).toHaveText('Page A')
   } finally {
     await server.close()
   }

@@ -62,23 +62,27 @@ export const test = async ({ expect, page: editorPage }: ElectronTestContext): P
 
   // eslint-disable-next-line e2e/no-direct-click -- supplies the user gesture required to start media playback
   await webContentsPage.getByRole('button', { name: 'Play' }).click()
-  await expect(webContentsPage.locator('body')).toHaveAttribute('data-audio-state', 'playing')
+  const locator1 = webContentsPage.locator('body')
+  await expect(locator1).toHaveAttribute('data-audio-state', 'playing')
   await expect(audioIndicator).toBeVisible()
   await expect(audioIndicator).toHaveAttribute('aria-pressed', 'false')
   await expect(audioIndicator).toHaveAttribute('title', 'Mute tab')
-  await expect(audioIndicator.locator('.MaskIconUnmute')).toBeVisible()
+  const locator2 = audioIndicator.locator('.MaskIconUnmute')
+  await expect(locator2).toBeVisible()
 
   // eslint-disable-next-line e2e/no-direct-click -- exercises the audio indicator's mute toggle
   await audioIndicator.click()
   await expect(audioIndicator).toHaveAttribute('aria-pressed', 'true')
   await expect(audioIndicator).toHaveAttribute('title', 'Unmute tab')
-  await expect(audioIndicator.locator('.MaskIconMute')).toBeVisible()
+  const locator3 = audioIndicator.locator('.MaskIconMute')
+  await expect(locator3).toBeVisible()
 
   // eslint-disable-next-line e2e/no-direct-click -- exercises the audio indicator's unmute toggle
   await audioIndicator.click()
   await expect(audioIndicator).toHaveAttribute('aria-pressed', 'false')
   await expect(audioIndicator).toHaveAttribute('title', 'Mute tab')
-  await expect(audioIndicator.locator('.MaskIconUnmute')).toBeVisible()
+  const locator4 = audioIndicator.locator('.MaskIconUnmute')
+  await expect(locator4).toBeVisible()
 
   // eslint-disable-next-line e2e/no-direct-click -- stops playback in the embedded page
   await webContentsPage.getByRole('button', { name: 'Stop' }).click()

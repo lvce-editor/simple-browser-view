@@ -1,13 +1,14 @@
 import type { VirtualDomNode } from '@lvce-editor/virtual-dom-worker'
+import { text } from '@lvce-editor/virtual-dom-worker'
 import type { SimpleBrowserTab } from '../SimpleBrowserTab/SimpleBrowserTab.ts'
 import * as AriaRoles from '../AriaRoles/AriaRoles.ts'
 import * as ClassNames from '../ClassNames/ClassNames.ts'
 import * as DomEventListenerFunctions from '../DomEventListenerFunctions/DomEventListenerFunctions.ts'
 import * as MergeClassNames from '../MergeClassNames/MergeClassNames.ts'
 import * as VirtualDomElements from '../VirtualDomElements/VirtualDomElements.ts'
-import * as VirtualDomHelpers from '../VirtualDomHelpers/VirtualDomHelpers.ts'
 
 const defaultTitle = 'Simple Browser'
+const activeTabClassName = MergeClassNames.mergeClassNames(ClassNames.MainTab, ClassNames.MainTabSelected)
 
 const tabTitleNode: VirtualDomNode = {
   childCount: 1,
@@ -67,7 +68,7 @@ const renderTab = (
 ): readonly VirtualDomNode[] => {
   const isActive = tab.browserViewId === activeBrowserViewId
   const title = tab.title || defaultTitle
-  const className = isActive ? MergeClassNames.mergeClassNames(ClassNames.MainTab, ClassNames.MainTabSelected) : ClassNames.MainTab
+  const className = isActive ? activeTabClassName : ClassNames.MainTab
   const dropIndicatorPosition = getDropIndicatorPosition(tabIndex, tabCount, tabDropIndex)
   return [
     {
@@ -89,7 +90,7 @@ const renderTab = (
       type: VirtualDomElements.Div,
     },
     tabTitleNode,
-    VirtualDomHelpers.text(title),
+    text(title),
     {
       'aria-label': `Close ${title}`,
       childCount: 1,

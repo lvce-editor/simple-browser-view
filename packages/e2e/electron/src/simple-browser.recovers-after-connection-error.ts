@@ -17,10 +17,12 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   try {
     await SimpleBrowser.show(page)
     const errorPage = await SimpleBrowser.openUrl(page, unavailableUrl)
-    await expect(errorPage.locator('body')).toContainText("This site can't be reached")
+    const locator1 = errorPage.locator('body')
+    await expect(locator1).toContainText("This site can't be reached")
 
     const recoveredPage = await SimpleBrowser.openUrl(page, availableServer.url)
-    await expect(recoveredPage.locator('h1')).toHaveText('Server is available again')
+    const locator2 = recoveredPage.locator('h1')
+    await expect(locator2).toHaveText('Server is available again')
   } finally {
     await availableServer.close()
   }

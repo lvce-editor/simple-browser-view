@@ -119,7 +119,8 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
   },
   'full-width-menu': async ({ address, browser, choose, expect, openMenu, page, server, tabs }): Promise<void> => {
     await Fixture.toggle(page)
-    await expect(page.locator('.BrowserFullWidth')).toHaveCount(1)
+    const locator1 = page.locator('.BrowserFullWidth')
+    await expect(locator1).toHaveCount(1)
     const entries = await openMenu('a[href="/two"]:not([target])')
     expect(entries.some((item) => item.label === 'Open Link in New Tab')).toBe(true)
     await choose('Open Link in New Tab')
@@ -195,7 +196,8 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     const entries = await openMenu('#draft')
     for (const label of ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All']) expect(entries.some((item) => item.label === label)).toBe(true)
     await choose('Paste')
-    await expect(guest.locator('#draft')).toHaveValue('pasted from native menu')
+    const locator2 = guest.locator('#draft')
+    await expect(locator2).toHaveValue('pasted from native menu')
   },
 }
 
