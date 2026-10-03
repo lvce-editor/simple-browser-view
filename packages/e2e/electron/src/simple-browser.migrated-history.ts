@@ -20,8 +20,10 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
   const historyView = page.locator('.SimpleBrowserHistory')
   await expect(historyView).toBeVisible()
   await expect(historyView).toHaveCSS('width', nonZeroPixelWidthRegex)
-  await expect(historyView.locator('h1')).toHaveText('History')
-  await expect(historyView.locator('input')).toHaveAttribute('placeholder', 'Search history')
+  const locator1 = historyView.locator('h1')
+  await expect(locator1).toHaveText('History')
+  const locator2 = historyView.locator('input')
+  await expect(locator2).toHaveAttribute('placeholder', 'Search history')
   const entries = historyView.locator('.SimpleBrowserHistoryEntry')
   await expect(entries).toHaveCount(2)
   const firstUrl = entries.nth(0).locator('.SimpleBrowserHistoryUrl')
@@ -31,7 +33,8 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
 
   await Fixture.pressControl(entries.nth(0).locator('.SimpleBrowserHistoryRemove'))
   await expect(entries).toHaveCount(1)
-  await expect(entries.locator('.SimpleBrowserHistoryUrl')).toHaveText('https://older.example')
+  const locator3 = entries.locator('.SimpleBrowserHistoryUrl')
+  await expect(locator3).toHaveText('https://older.example')
 
   await Fixture.pressControl(historyView.locator('.SimpleBrowserHistoryControls button'))
   await expect(entries).toHaveCount(0)

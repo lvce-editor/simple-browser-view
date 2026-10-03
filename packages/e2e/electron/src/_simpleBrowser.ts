@@ -3,33 +3,53 @@ import type { Page } from '@playwright/test'
 const navigationTimeout = 15_000
 const commandPaletteTimeout = 5000
 
-const isExpectedPage = (candidate: Page, expectedUrl: string): boolean => {
-  const candidateUrl = candidate.url()
+const isExpectedUrl = (candidateUrl: string, expectedUrl: string): boolean => {
   if (candidateUrl.startsWith(expectedUrl)) {
     return true
   }
-  try {
-    const parsedUrl = new URL(candidateUrl)
-    const message = parsedUrl.searchParams.get('message') || ''
-    return parsedUrl.pathname.endsWith('/pages/error/error.html') && message.includes(expectedUrl)
-  } catch {
-    return false
-  }
+  if (!URL.canParse(candidateUrl)) return false
+  const parsedUrl = new URL(candidateUrl)
+  const message = parsedUrl.searchParams.get('message') || ''
+  return parsedUrl.pathname.endsWith('/pages/error/error.html') && message.includes(expectedUrl)
+}
+
+const waitForMatchingPage = async (page: Page, isMatch: (candidate: Page, url: string) => boolean): Promise<Page> => {
+  const context = page.context()
+  const matchingPage = context.pages().find((candidate) => isMatch(candidate, candidate.url()))
+  if (matchingPage) return matchingPage
+  return new Promise((resolve, reject) => {
+    const observedPages = new Map<Page, () => void>()
+    const cleanup = (): void => {
+      context.off('page', observePage)
+      for (const [candidate, onNavigate] of observedPages) candidate.off('framenavigated', onNavigate)
+      deadline.removeEventListener('abort', onDeadline)
+    }
+    const onDeadline = (): void => {
+      const pageUrls = context.pages().map((candidate) => candidate.url())
+      cleanup()
+      reject(new Error(`Timed out waiting for matching page. Open pages: ${pageUrls.join(', ')}`))
+    }
+    const deadline = AbortSignal.timeout(navigationTimeout)
+    const observePage = (candidate: Page): void => {
+      const onNavigate = (): void => {
+        if (!isMatch(candidate, candidate.url())) return
+        cleanup()
+        resolve(candidate)
+      }
+      observedPages.set(candidate, onNavigate)
+      candidate.on('framenavigated', onNavigate)
+      onNavigate()
+    }
+    context.on('page', observePage)
+    deadline.addEventListener('abort', onDeadline, { once: true })
+    for (const candidate of context.pages()) observePage(candidate)
+  })
 }
 
 export const waitForWebContentsPage = async (page: Page, expectedUrl: string): Promise<Page> => {
-  const context = page.context()
-  const end = Date.now() + navigationTimeout
-  while (Date.now() < end) {
-    const webContentsPage = context.pages().find((candidate) => isExpectedPage(candidate, expectedUrl))
-    if (webContentsPage) {
-      await webContentsPage.waitForLoadState('domcontentloaded')
-      return webContentsPage
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50))
-  }
-  const pageUrls = context.pages().map((candidate) => candidate.url())
-  throw new Error(`Simple Browser WebContentsView did not navigate to ${expectedUrl}. Open pages: ${pageUrls.join(', ')}`)
+  const webContentsPage = await waitForMatchingPage(page, (_candidate, url) => isExpectedUrl(url, expectedUrl))
+  await webContentsPage.waitForLoadState('domcontentloaded')
+  return webContentsPage
 }
 
 export const show = async (page: Page): Promise<void> => {
@@ -108,17 +128,9 @@ export const openDevtools = async (page: Page): Promise<Page> => {
   await page.locator('.SimpleBrowserHeader').getByRole('button', { exact: true, name: 'Customize and control Simple Browser' }).click()
   // eslint-disable-next-line e2e/no-direct-click -- selects the browser DevTools action
   await page.getByRole('menuitem', { exact: true, name: 'Toggle Developer Tools' }).click()
-  const end = Date.now() + navigationTimeout
-  while (Date.now() < end) {
-    const devtoolsPage = context.pages().find((candidate) => !existingPages.has(candidate) && candidate.url().startsWith('devtools://'))
-    if (devtoolsPage) {
-      await devtoolsPage.waitForLoadState('domcontentloaded')
-      return devtoolsPage
-    }
-    await new Promise((resolve) => setTimeout(resolve, 50))
-  }
-  const pageUrls = context.pages().map((candidate) => candidate.url())
-  throw new Error(`Simple Browser developer tools did not open. Open pages: ${pageUrls.join(', ')}`)
+  const devtoolsPage = await waitForMatchingPage(page, (candidate, url) => !existingPages.has(candidate) && url.startsWith('devtools://'))
+  await devtoolsPage.waitForLoadState('domcontentloaded')
+  return devtoolsPage
 }
 
 export const injectJavaScriptCode = async <T>(webContentsPage: Page, code: string): Promise<T> => {

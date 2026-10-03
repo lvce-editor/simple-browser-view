@@ -9,7 +9,8 @@ export const test = async (context: ElectronTestContext): Promise<void> => {
   try {
     const originalBounds = await page.locator('.Main').boundingBox()
     await Fixture.toggle(page)
-    await expect(page.locator('.BrowserFullWidth')).toHaveCount(1)
+    const locator1 = page.locator('.BrowserFullWidth')
+    await expect(locator1).toHaveCount(1)
     await expect(browser.getByRole('button', { exact: true, name: 'Restore Coding Layout' })).toBeVisible()
     await expect
       .poll(async () => {
@@ -18,7 +19,8 @@ export const test = async (context: ElectronTestContext): Promise<void> => {
       })
       .toBe(await page.evaluate(() => globalThis.innerWidth))
     await Fixture.toggle(page)
-    await expect(page.locator('.BrowserFullWidth')).toHaveCount(0)
+    const locator2 = page.locator('.BrowserFullWidth')
+    await expect(locator2).toHaveCount(0)
     await expect.poll(() => page.locator('.Main').boundingBox()).toEqual(originalBounds)
   } finally {
     await fixture.close()

@@ -85,7 +85,8 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
     await page.mouse.up()
     await expect.poll(() => getTabTitles(tabs)).toEqual(['One', 'Three', 'Two'])
 
-    await expect(page.locator('.SimpleBrowserTabDropBefore, .SimpleBrowserTabDropAfter')).toHaveCount(0)
+    const locator1 = page.locator('.SimpleBrowserTabDropBefore, .SimpleBrowserTabDropAfter')
+    await expect(locator1).toHaveCount(0)
 
     // eslint-disable-next-line e2e/no-direct-click -- validates close behavior after a reorder
     await tabs.filter({ hasText: 'Three' }).getByRole('button', { name: 'Close Three' }).click()

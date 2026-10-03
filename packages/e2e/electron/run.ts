@@ -57,17 +57,20 @@ for (const file of files) {
       { detached: processGroup, env, stdio: 'inherit' },
     )
     const code = await new Promise<number>((resolve, reject) => {
-      const deadline = setTimeout(() => {
+      const deadline = AbortSignal.timeout(120_000)
+      const onDeadline = (): void => {
         process.stderr.write(`FAIL ${file}: Electron startup, test, or shutdown exceeded 120 seconds\n`)
         if (processGroup && child.pid) process.kill(-child.pid, 'SIGKILL')
         else child.kill('SIGKILL')
-      }, 120_000)
+      }
+      const clearDeadline = (): void => deadline.removeEventListener('abort', onDeadline)
+      deadline.addEventListener('abort', onDeadline, { once: true })
       child.once('error', (error) => {
-        clearTimeout(deadline)
+        clearDeadline()
         reject(error)
       })
       child.once('exit', (value) => {
-        clearTimeout(deadline)
+        clearDeadline()
         resolve(value ?? 1)
       })
     })

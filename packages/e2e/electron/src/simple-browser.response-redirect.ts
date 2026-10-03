@@ -17,7 +17,8 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   try {
     await SimpleBrowser.show(page)
     const webContentsPage = await SimpleBrowser.openUrl(page, `${server.url}/redirect`, `${server.url}/destination`)
-    await expect(webContentsPage.locator('h1')).toHaveText('Redirect destination')
+    const locator1 = webContentsPage.locator('h1')
+    await expect(locator1).toHaveText('Redirect destination')
   } finally {
     await server.close()
   }

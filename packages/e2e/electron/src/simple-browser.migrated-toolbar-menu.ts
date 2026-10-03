@@ -20,11 +20,13 @@ export const test = async ({ electronApp, expect, page }: ElectronTestContext): 
     await expect(menu).toContainText('Toggle Developer Tools')
 
     await Fixture.pressControl(page.locator('#Menu-0 .MenuItem').filter({ hasText: 'New Tab' }))
-    await expect(page.locator('.SimpleBrowserTab')).toHaveCount(2)
+    const locator1 = page.locator('.SimpleBrowserTab')
+    await expect(locator1).toHaveCount(2)
 
     await Fixture.pressControl(menuButton)
     await Fixture.pressControl(page.locator('#Menu-0 .MenuItem').filter({ hasText: 'Close Tab' }))
-    await expect(page.locator('.SimpleBrowserTab')).toHaveCount(1)
+    const locator2 = page.locator('.SimpleBrowserTab')
+    await expect(locator2).toHaveCount(1)
   } finally {
     await fixture.close()
   }
