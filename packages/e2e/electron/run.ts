@@ -1,7 +1,11 @@
 import { spawn } from 'node:child_process'
 import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises'
+import { createRequire } from 'node:module'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+
+const require = createRequire(import.meta.url)
+const testRunner = require.resolve('@lvce-editor/test-with-playwright/bin/test-with-playwright.js')
 
 const args = process.argv.slice(2)
 const filter = args.find((arg) => arg.startsWith('--filter='))?.slice('--filter='.length) || ''
@@ -28,16 +32,6 @@ for (const file of files) {
     const config = join(profile, 'config', name)
     await mkdir(config, { recursive: true })
     await writeFile(join(config, 'settings.json'), '{}')
-    if (file === 'simple-browser.keybinding-popup-position.ts') {
-      await writeFile(
-        join(config, 'keybindings.json'),
-        JSON.stringify([
-          { args: ['app://keybindings'], command: 'Main.openUri', key: 3111, source: 'User' },
-          { command: 'Layout.hideSideBar', key: 3102, source: 'User' },
-          { args: ['simple-browser://'], command: 'Layout.showPreview', key: 2580, source: 'User' },
-        ]),
-      )
-    }
   }
   try {
     process.stdout.write(`RUN ${file}\n`)
@@ -45,7 +39,7 @@ for (const file of files) {
     const child = spawn(
       process.execPath,
       [
-        './node_modules/@lvce-editor/test-with-playwright/bin/test-with-playwright.js',
+        testRunner,
         '--electron',
         '--only-extension=./extension',
         '--test-path=./electron',
