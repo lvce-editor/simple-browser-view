@@ -14,8 +14,10 @@ export const test: Test = async ({ Command, expect, Locator }) => {
   const historyView = Locator('.SimpleBrowserHistory')
   await expect(historyView).toBeVisible()
   await expect(historyView).toHaveCSS('width', nonZeroPixelWidthRegex as unknown as string)
-  await expect(historyView.locator('h1')).toHaveText('History')
-  await expect(historyView.locator('input')).toHaveAttribute('placeholder', 'Search history')
+  const heading = historyView.locator('h1')
+  await expect(heading).toHaveText('History')
+  const searchInput = historyView.locator('input')
+  await expect(searchInput).toHaveAttribute('placeholder', 'Search history')
   const entries = historyView.locator('.SimpleBrowserHistoryEntry')
   await expect(entries).toHaveCount(2)
   const newestUrl = entries.nth(0).locator('.SimpleBrowserHistoryUrl')
@@ -25,7 +27,8 @@ export const test: Test = async ({ Command, expect, Locator }) => {
 
   await Command.execute('SimpleBrowserHistory.removeEntry', 0)
   await expect(entries).toHaveCount(1)
-  await expect(entries.locator('.SimpleBrowserHistoryUrl')).toHaveText('https://older.example')
+  const remainingUrl = entries.locator('.SimpleBrowserHistoryUrl')
+  await expect(remainingUrl).toHaveText('https://older.example')
 
   await Command.execute('SimpleBrowserHistory.clearHistory')
   await expect(entries).toHaveCount(0)
