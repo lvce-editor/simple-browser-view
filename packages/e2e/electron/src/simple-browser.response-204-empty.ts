@@ -25,8 +25,9 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
 
     await SimpleBrowser.setUrl(page, noContentServer.url)
     await noContentRequested
-    const locator2 = webContentsPage.locator('h1')
-    await expect(locator2).toHaveText('Existing content')
+    // HTTP 204 keeps the existing document; locator assertions wait for a navigation
+    // that never commits in this Electron fixture. Read the retained document directly.
+    await expect.poll(() => webContentsPage.evaluate(() => document.querySelector('h1')?.textContent)).toBe('Existing content')
     expect(webContentsPage.url()).toBe(`${contentServer.url}/`)
   } finally {
     await Promise.all([contentServer.close(), noContentServer.close()])

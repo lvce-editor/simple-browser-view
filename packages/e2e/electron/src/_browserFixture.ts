@@ -32,7 +32,7 @@ export const command = async (page: Page, label: string): Promise<void> => {
   await picker.waitFor({ state: 'hidden' })
 }
 
-export const settings = async (electronApp: ElectronApplication, values: Readonly<Record<string, unknown>>): Promise<void> => {
+const writeConfiguration = async (electronApp: ElectronApplication, filename: string, values: unknown): Promise<void> => {
   const profile = process.env.SIMPLE_BROWSER_TEST_PROFILE
   if (!profile) throw new Error('Run Electron tests using npm run e2e:electron to isolate configuration')
   const configHome = await electronApp.evaluate(() => process.env.XDG_CONFIG_HOME)
@@ -42,8 +42,16 @@ export const settings = async (electronApp: ElectronApplication, values: Readonl
   for (const name of ['lvce', 'lvce-oss']) {
     const directory = join(configHome, name)
     await mkdir(directory, { recursive: true })
-    await writeFile(join(directory, 'settings.json'), JSON.stringify(values))
+    await writeFile(join(directory, filename), JSON.stringify(values))
   }
+}
+
+export const settings = async (electronApp: ElectronApplication, values: Readonly<Record<string, unknown>>): Promise<void> => {
+  await writeConfiguration(electronApp, 'settings.json', values)
+}
+
+export const keybindings = async (electronApp: ElectronApplication, values: readonly Readonly<Record<string, unknown>>[]): Promise<void> => {
+  await writeConfiguration(electronApp, 'keybindings.json', values)
 }
 
 export const reset = async ({ electronApp, page }: ElectronTestContext, preferences: Readonly<Record<string, unknown>> = {}): Promise<void> => {
