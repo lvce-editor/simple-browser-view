@@ -10,7 +10,7 @@ const testRunner = require.resolve('@lvce-editor/test-with-playwright/bin/test-w
 const args = process.argv.slice(2)
 const filter = args.find((arg) => arg.startsWith('--filter='))?.slice('--filter='.length) || ''
 const version =
-  args.find((arg) => arg.startsWith('--electron-version='))?.slice('--electron-version='.length) || process.env.LVCE_ELECTRON_VERSION || 'v0.113.19'
+  args.find((arg) => arg.startsWith('--electron-version='))?.slice('--electron-version='.length) || process.env.LVCE_ELECTRON_VERSION || 'v0.118.12'
 const extraArgs = args.filter((arg) => !arg.startsWith('--filter=') && !arg.startsWith('--electron-version='))
 const entries = await readdir(join(import.meta.dirname, 'src'))
 const files = entries
@@ -32,6 +32,16 @@ for (const file of files) {
     const config = join(profile, 'config', name)
     await mkdir(config, { recursive: true })
     await writeFile(join(config, 'settings.json'), '{}')
+    if (file === 'simple-browser.keybinding-popup-position.ts') {
+      await writeFile(
+        join(config, 'keybindings.json'),
+        JSON.stringify([
+          { args: ['app://keybindings'], command: 'Main.openUri', key: 3111, source: 'User' },
+          { command: 'Layout.hideSideBar', key: 3102, source: 'User' },
+          { args: ['simple-browser://'], command: 'Layout.showPreview', key: 2580, source: 'User' },
+        ]),
+      )
+    }
   }
   try {
     process.stdout.write(`RUN ${file}\n`)
@@ -51,17 +61,20 @@ for (const file of files) {
       { detached: processGroup, env, stdio: 'inherit' },
     )
     const code = await new Promise<number>((resolve, reject) => {
-      const deadline = setTimeout(() => {
+      const deadline = AbortSignal.timeout(120_000)
+      const onDeadline = (): void => {
         process.stderr.write(`FAIL ${file}: Electron startup, test, or shutdown exceeded 120 seconds\n`)
         if (processGroup && child.pid) process.kill(-child.pid, 'SIGKILL')
         else child.kill('SIGKILL')
-      }, 120_000)
+      }
+      const clearDeadline = (): void => deadline.removeEventListener('abort', onDeadline)
+      deadline.addEventListener('abort', onDeadline, { once: true })
       child.once('error', (error) => {
-        clearTimeout(deadline)
+        clearDeadline()
         reject(error)
       })
       child.once('exit', (value) => {
-        clearTimeout(deadline)
+        clearDeadline()
         resolve(value ?? 1)
       })
     })

@@ -129,7 +129,8 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     await expect(tabs).toHaveCount(3)
     await Fixture.pressControl(tabs.first())
     await expect(address).toHaveValue(`${server.url}/one`)
-    await expect(guest.locator('#draft')).toHaveValue('keep first draft')
+    const locator1 = guest.locator('#draft')
+    await expect(locator1).toHaveValue('keep first draft')
     expect(await guest.evaluate(() => window['documentToken'])).toBe(token)
   },
 }

@@ -2,20 +2,22 @@ import type { ElectronTestContext } from './_responseTest.ts'
 import * as Fixture from './_browserFixture.ts'
 const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> = {
   favicon: async ({ expect, tabs }): Promise<void> => {
-    await expect(tabs.first().locator('img.SimpleBrowserTabFavicon')).toBeVisible()
-    await expect(tabs.first().locator('img.SimpleBrowserTabFavicon')).toHaveAttribute('src', /^data:image\/svg\+xml/)
-    expect(
-      await tabs
-        .first()
-        .locator('img')
-        .evaluate((image: HTMLImageElement) => image.naturalWidth),
-    ).toBe(16)
+    const locator1 = tabs.first().locator('img.SimpleBrowserTabFavicon')
+    await expect(locator1).toBeVisible()
+    const locator2 = tabs.first().locator('img.SimpleBrowserTabFavicon')
+    await expect(locator2).toHaveAttribute('src', /^blob:/)
+    const imageWidth = await tabs
+      .first()
+      .locator('img')
+      .evaluate((image: HTMLImageElement) => image.naturalWidth)
+    expect(imageWidth).toBe(16)
   },
   'favicon-fallback': async ({ expect, guest, tabs }): Promise<void> => {
     await guest.evaluate(() => {
       document.querySelector('link')!.setAttribute('href', 'data:image/png;base64,broken')
     })
-    await expect(tabs.first().locator('.SimpleBrowserTabFaviconFallback')).toBeVisible()
+    const locator4 = tabs.first().locator('.SimpleBrowserTabFaviconFallback')
+    await expect(locator4).toBeVisible()
   },
   'inherit-theme': async ({ browser, expect, guest, page }): Promise<void> => {
     await expect(browser).not.toHaveClass(/SimpleBrowserLight/)
@@ -31,10 +33,15 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
     expect(await guest.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches)).toBe(siteTheme)
   },
   'tab-hover': async ({ browser, expect, page, tabs }): Promise<void> => {
+    await expect(tabs.first()).toHaveAttribute('aria-label', 'One')
+    const locator5 = browser.locator('.SimpleBrowserHeader .MaskIconRefresh')
+    await expect(locator5).toBeVisible()
     await tabs.first().hover()
-    await expect(browser.locator('.SimpleBrowserTabHover')).toContainText('One')
+    const locator6 = browser.locator('.SimpleBrowserTabHover')
+    await expect(locator6).toContainText('One')
     await Fixture.toggle(page)
-    await expect(browser.locator('.SimpleBrowserTabHover')).toHaveCount(0)
+    const locator7 = browser.locator('.SimpleBrowserTabHover')
+    await expect(locator7).toHaveCount(0)
   },
 }
 

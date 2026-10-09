@@ -20,11 +20,13 @@ export const test = async ({ expect, page }: ElectronTestContext): Promise<void>
   try {
     await SimpleBrowser.show(page)
     const webContentsPage = await SimpleBrowser.openUrl(page, contentServer.url)
-    await expect(webContentsPage.locator('h1')).toHaveText('Existing content')
+    const locator1 = webContentsPage.locator('h1')
+    await expect(locator1).toHaveText('Existing content')
 
     await SimpleBrowser.setUrl(page, noContentServer.url)
     await noContentRequested
-    await expect(webContentsPage.locator('h1')).toHaveText('Existing content')
+    const locator2 = webContentsPage.locator('h1')
+    await expect(locator2).toHaveText('Existing content')
     expect(webContentsPage.url()).toBe(`${contentServer.url}/`)
   } finally {
     await Promise.all([contentServer.close(), noContentServer.close()])

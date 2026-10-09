@@ -11,7 +11,10 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
       target.sendInputEvent({ keyCode: 'L', modifiers: ['control'], type: 'keyUp' })
     }, guest.url())
     await expect(address).toBeFocused()
-    expect(await address.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd])).toEqual([0, `${server.url}/one`.length])
+    // Native focus and the asynchronous address-selection command can complete separately.
+    await expect
+      .poll(() => address.evaluate((input: HTMLInputElement) => [input.selectionStart, input.selectionEnd]))
+      .toEqual([0, `${server.url}/one`.length])
     await expect(browser).toBeAttached()
   },
   'control-click': async ({ address, browser, electronApp, expect, guest, page, server, tabs }): Promise<void> => {
@@ -38,14 +41,17 @@ const cases: Record<string, (fixture: Fixture.BrowserFixture) => Promise<void>> 
   hash: async ({ address, browser, expect, guest, server }): Promise<void> => {
     await Fixture.pressControl(guest.getByRole('link', { name: 'Section link' }))
     await expect(address).toHaveValue(`${server.url}/one#section`)
-    await expect(guest.locator('#section')).toBeInViewport()
+    const locator1 = guest.locator('#section')
+    await expect(locator1).toBeInViewport()
     await expect(browser).toBeAttached()
   },
   'history-shortcut': async ({ address, expect, page, server }): Promise<void> => {
     await address.focus()
     await address.press('Control+h')
-    await expect(page.locator('.Main')).toContainText('History')
-    await expect(page.locator('.Main')).toContainText(server.url)
+    const locator2 = page.locator('.Main')
+    await expect(locator2).toContainText('History')
+    const locator3 = page.locator('.Main')
+    await expect(locator3).toContainText(server.url)
   },
   'middle-click': async ({ address, browser, electronApp, expect, guest, page, server, tabs }): Promise<void> => {
     const link = guest.getByRole('link', { name: 'Next page' })

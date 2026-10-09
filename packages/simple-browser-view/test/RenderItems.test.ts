@@ -37,3 +37,37 @@ test('renders the current page title in the tab strip', () => {
     ]),
   )
 })
+
+test('renders the address draft while focused', () => {
+  const oldState = Create.create(1, 0, 0, 800, 600)
+  const newState: SimpleBrowserState = {
+    ...oldState,
+    browserViewId: 12,
+    focused: true,
+    iframeSrc: 'https://example.com/current',
+    inputValue: 'https://example.com/draft',
+    tabs: [],
+  }
+
+  const command = RenderItems.renderItems(oldState, newState)
+  expect(command[1]).toEqual(
+    expect.arrayContaining([expect.objectContaining({ name: 'simple-browser-address', value: 'https://example.com/draft' })]),
+  )
+})
+
+test('renders the current URL while unfocused', () => {
+  const oldState = Create.create(1, 0, 0, 800, 600)
+  const newState: SimpleBrowserState = {
+    ...oldState,
+    browserViewId: 12,
+    focused: false,
+    iframeSrc: 'https://example.com/current',
+    inputValue: 'https://example.com/draft',
+    tabs: [],
+  }
+
+  const command = RenderItems.renderItems(oldState, newState)
+  expect(command[1]).toEqual(
+    expect.arrayContaining([expect.objectContaining({ name: 'simple-browser-address', value: 'https://example.com/current' })]),
+  )
+})

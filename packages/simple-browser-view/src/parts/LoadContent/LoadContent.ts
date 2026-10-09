@@ -23,23 +23,26 @@ const getUrlFromSavedState = (savedState: any): string => {
 }
 
 export const loadContent = async (state: SimpleBrowserState, savedState: any): Promise<SimpleBrowserState> => {
-  const { headerHeight, height, uid, uri, width, x, y } = state
+  const { headerHeight, height, uri, width, x, y } = state
   const idPart = uri.slice('simple-browser://'.length)
   const id = getId(idPart)
   const iframeSrc = getUrlFromSavedState(savedState)
-  // TODO load keybindings in parallel with creating browserview
-  const keyBindings = await KeyBindingsInitial.getKeyBindings()
-  const suggestionsEnabled = await Preferences.get('simpleBrowser.suggestions')
   const browserViewX = x
   const browserViewY = y + headerHeight
   const browserViewWidth = width
   const browserViewHeight = height - headerHeight
-  const shortcuts = await SimpleBrowserPreferences.getShortCuts()
+  const keyBindingsPromise = KeyBindingsInitial.getKeyBindings()
+  const suggestionsEnabledPromise = Preferences.get('simpleBrowser.suggestions')
+  const shortcutsPromise = SimpleBrowserPreferences.getShortCuts()
+
+  // Start creating the native view while worker preferences are loading. The keybindings are set
+  // after they load, before the view is navigated or restored to the editor.
+  const actualId = await ElectronWebContentsView.createWebContentsView(id, [])
+  const [keyBindings, suggestionsEnabled, shortcuts] = await Promise.all([keyBindingsPromise, suggestionsEnabledPromise, shortcutsPromise])
+  const fallThroughKeyBindings = GetFallThroughKeyBindings.getFallThroughKeyBindings(keyBindings)
 
   if (id) {
-    // @ts-ignore
-    const actualId = await ElectronWebContentsView.createWebContentsView(id, uid)
-    await ElectronWebContentsViewFunctions.setFallthroughKeyBindings(keyBindings)
+    await ElectronWebContentsViewFunctions.setFallthroughKeyBindings(actualId, fallThroughKeyBindings)
     await ElectronWebContentsViewFunctions.resizeWebContentsView(actualId, browserViewX, browserViewY, browserViewWidth, browserViewHeight)
     if (id !== actualId) {
       await ElectronWebContentsViewFunctions.setIframeSrc(actualId, iframeSrc)
@@ -67,16 +70,13 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
     }
   }
 
-  const fallThroughKeyBindings = GetFallThroughKeyBindings.getFallThroughKeyBindings(keyBindings)
-  // @ts-ignore
-  const browserViewId = await ElectronWebContentsView.createWebContentsView(/* restoreId */ 0, uid)
-  await ElectronWebContentsViewFunctions.setFallthroughKeyBindings(fallThroughKeyBindings)
-  await ElectronWebContentsViewFunctions.resizeWebContentsView(browserViewId, browserViewX, browserViewY, browserViewWidth, browserViewHeight)
-  Assert.number(browserViewId)
-  await ElectronWebContentsViewFunctions.setIframeSrc(browserViewId, iframeSrc)
-  const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(browserViewId)
+  await ElectronWebContentsViewFunctions.setFallthroughKeyBindings(actualId, fallThroughKeyBindings)
+  await ElectronWebContentsViewFunctions.resizeWebContentsView(actualId, browserViewX, browserViewY, browserViewWidth, browserViewHeight)
+  Assert.number(actualId)
+  await ElectronWebContentsViewFunctions.setIframeSrc(actualId, iframeSrc)
+  const { canGoBack, canGoForward, title } = await ElectronWebContentsViewFunctions.getStats(actualId)
   const tab: SimpleBrowserTab = {
-    browserViewId,
+    browserViewId: actualId,
     canGoBack,
     canGoForward,
     iframeSrc,
@@ -86,7 +86,7 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
   }
   return {
     ...state,
-    browserViewId,
+    browserViewId: actualId,
     canGoBack,
     canGoForward,
     iframeSrc,
@@ -94,6 +94,6 @@ export const loadContent = async (state: SimpleBrowserState, savedState: any): P
     suggestionsEnabled,
     tabs: [tab],
     title,
-    uri: `simple-browser://${browserViewId}`,
+    uri: `simple-browser://${actualId}`,
   }
 }

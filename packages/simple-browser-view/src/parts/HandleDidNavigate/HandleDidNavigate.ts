@@ -2,12 +2,12 @@ import type { SimpleBrowserState } from '../SimpleBrowserState/SimpleBrowserStat
 import * as SimpleBrowserTabs from '../SimpleBrowserTabs/SimpleBrowserTabs.ts'
 
 export const handleDidNavigate = (state: SimpleBrowserState, browserViewIdOrUrl: number | string, updatedUrl?: string): SimpleBrowserState => {
-  const { browserViewId: activeBrowserViewId, tabs } = state
+  const { browserViewId: activeBrowserViewId, focused, inputValue, tabs } = state
   const browserViewId = updatedUrl === undefined ? activeBrowserViewId : Number(browserViewIdOrUrl)
   const url = updatedUrl === undefined ? String(browserViewIdOrUrl) : updatedUrl
   const update = {
     iframeSrc: url,
-    inputValue: url,
+    inputValue: browserViewId === activeBrowserViewId && focused ? inputValue : url,
     isLoading: false,
   }
   if (tabs.length === 0) {

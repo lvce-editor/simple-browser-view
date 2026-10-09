@@ -15,7 +15,24 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     await electronApp.evaluate(({ clipboard }) => clipboard.clear())
     await openMenu('#picture')
     await choose('Copy Image')
-    await expect.poll(() => electronApp.evaluate(({ clipboard }) => clipboard.readImage().isEmpty())).toBe(false)
+    await expect
+      .poll(() =>
+        electronApp.evaluate(async ({ clipboard }) => {
+          const api = clipboard as unknown as {
+            read: () => Promise<readonly { types: readonly string[]; getType: (type: string) => Promise<Blob> }[]>
+          }
+          const items = await api.read()
+          for (const item of items) {
+            const type = item.types.find((value) => value.startsWith('image/'))
+            if (type) {
+              const blob = await item.getType(type)
+              if (blob.size > 0) return true
+            }
+          }
+          return false
+        }),
+      )
+      .toBe(true)
   },
   'copy-image-address': async ({ choose, electronApp, expect, openMenu, server }): Promise<void> => {
     await openMenu('#picture')
@@ -102,7 +119,8 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
   },
   'full-width-menu': async ({ address, browser, choose, expect, openMenu, page, server, tabs }): Promise<void> => {
     await Fixture.toggle(page)
-    await expect(page.locator('.BrowserFullWidth')).toHaveCount(1)
+    const locator1 = page.locator('.BrowserFullWidth')
+    await expect(locator1).toHaveCount(1)
     const entries = await openMenu('a[href="/two"]:not([target])')
     expect(entries.some((item) => item.label === 'Open Link in New Tab')).toBe(true)
     await choose('Open Link in New Tab')
@@ -178,7 +196,8 @@ const cases: Record<string, (fixture: NativeFixture) => Promise<void>> = {
     const entries = await openMenu('#draft')
     for (const label of ['Undo', 'Redo', 'Cut', 'Copy', 'Paste', 'Select All']) expect(entries.some((item) => item.label === label)).toBe(true)
     await choose('Paste')
-    await expect(guest.locator('#draft')).toHaveValue('pasted from native menu')
+    const locator2 = guest.locator('#draft')
+    await expect(locator2).toHaveValue('pasted from native menu')
   },
 }
 

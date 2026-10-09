@@ -42,8 +42,10 @@ export const run = async (context: ElectronTestContext, scenario: string): Promi
       }
       case 'history': {
         await choose(page, 'History')
-        await expect(page.locator('.Main')).toContainText('History')
-        await expect(page.locator('.Main')).toContainText(fixture.server.url)
+        const locator1 = page.locator('.Main')
+        await expect(locator1).toContainText('History')
+        const locator2 = page.locator('.Main')
+        await expect(locator2).toContainText(fixture.server.url)
 
         break
       }
