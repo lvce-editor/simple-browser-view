@@ -6,6 +6,7 @@ import { root } from './root.js'
 const locations = [
   'package.json',
   'package-lock.json',
+  'packages/server/src/postinstall.js',
   '.github/workflows/pr.yml',
   '.github/workflows/ci.yml',
   '.github/workflows/release.yml',
