@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import { root } from './root.js'
 
 const locations = [
+  '.nvmrc',
   'package.json',
   'package-lock.json',
   'packages/server/src/postinstall.js',
