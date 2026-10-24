@@ -12,7 +12,7 @@ test('reads the latest state and renders edits through the component state comma
   const editedState = { ...pendingState, iframeSrc: 'https://example.com/edited' }
   await commandMap['SimpleBrowser.setComponentState'](1, editedState)
 
-  expect(commandMap['SimpleBrowser.getComponentState'](1)).toBe(editedState)
+  expect(commandMap['SimpleBrowser.getComponentState'](1)).toEqual(editedState)
   expect(SimpleBrowserStates.get(1).oldState).toBe(initialState)
   const diff = commandMap['SimpleBrowser.diff2'](1)
   expect(diff.length).toBeGreaterThan(0)

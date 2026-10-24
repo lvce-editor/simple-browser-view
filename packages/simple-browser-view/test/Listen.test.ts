@@ -1,4 +1,5 @@
 import { beforeEach, expect, jest, test } from '@jest/globals'
+import * as Rpc from '@lvce-editor/rpc'
 import * as RpcId from '../src/parts/RpcId/RpcId.ts'
 
 const mockRpc = {
@@ -15,6 +16,7 @@ beforeEach(() => {
 
 jest.unstable_mockModule('@lvce-editor/rpc', () => {
   return {
+    ...Rpc,
     MessagePortRpcParent: mockWebWorkerRpcClient,
     WebSocketRpcParent: mockWebWorkerRpcClient,
     WebWorkerRpcClient: mockWebWorkerRpcClient,
