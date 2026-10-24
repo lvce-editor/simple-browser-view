@@ -3,7 +3,7 @@ import { beforeEach, expect, jest, test } from '@jest/globals'
 const createWebContentsView = jest.fn<(restoreId: number, fallThroughKeyBindings: readonly any[]) => Promise<number>>().mockResolvedValue(42)
 const setFallthroughKeyBindings = jest.fn<(id: number, fallThroughKeyBindings: readonly any[]) => Promise<void>>().mockResolvedValue(undefined)
 const resizeWebContentsView = jest.fn<() => Promise<void>>().mockResolvedValue(undefined)
-const setIframeSrc = jest.fn<() => Promise<void>>().mockResolvedValue(undefined)
+const setIframeSrc = jest.fn<(id: number, iframeSrc: string) => Promise<void>>().mockResolvedValue(undefined)
 const getStats = jest.fn<() => Promise<{ canGoBack: boolean; canGoForward: boolean; title: string }>>().mockResolvedValue({
   canGoBack: false,
   canGoForward: false,

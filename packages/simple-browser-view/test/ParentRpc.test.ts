@@ -8,7 +8,6 @@ test('invoke - successfully invokes command', async () => {
     },
   } as any
   ParentRpc.set(mockRpc)
-  // @ts-expect-error
   const result = await ParentRpc.invoke('test.command', 'arg1', 'arg2')
   expect(result).toBe('test result')
 })
@@ -20,7 +19,6 @@ test('invoke - handles error from rpc', async () => {
     },
   } as any
   ParentRpc.set(mockRpc)
-  // @ts-expect-error
   await expect(ParentRpc.invoke('test.command')).rejects.toThrow('test error')
 })
 
@@ -58,7 +56,6 @@ test('invokeAndTransfer - successfully transfers data', async () => {
     },
   } as any
   ParentRpc.set(mockRpc)
-  // @ts-expect-error
   const result = await ParentRpc.invokeAndTransfer('test.transfer', 'data')
   expect(result).toBe('transfer success')
 })
@@ -70,6 +67,5 @@ test('invokeAndTransfer - handles transfer error', async () => {
     },
   } as any
   ParentRpc.set(mockRpc)
-  // @ts-expect-error
   await expect(ParentRpc.invokeAndTransfer('test.transfer')).rejects.toThrow('transfer failed')
 })
